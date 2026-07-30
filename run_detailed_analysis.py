@@ -1,11 +1,10 @@
 import os
 import sys
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 from detailedAnalysis.helper import fetch_json, load_env
 from detailedAnalysis.main import main as run_detailed_analysis
-
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"

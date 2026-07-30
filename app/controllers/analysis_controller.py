@@ -1,0 +1,31 @@
+from fastapi import HTTPException, status
+
+from app.models.analysis import AnalysisReport, TickerList
+from app.services.analysis_service import AnalysisService
+
+
+class AnalysisController:
+    """Translate HTTP requests into analysis service calls."""
+
+    def __init__(self, service: AnalysisService) -> None:
+        self._service = service
+
+    def get_tickers(self) -> TickerList:
+        return self._service.get_tickers()
+
+    def get_report(self, ticker: str) -> AnalysisReport:
+        try:
+            report = self._service.get_report(ticker)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
+
+        if report is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Analysis report for {ticker.upper()} was not found",
+            )
+
+        return report

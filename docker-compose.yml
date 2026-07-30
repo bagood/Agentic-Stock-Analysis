@@ -1,0 +1,47 @@
+services:
+  stocknoob:
+    build:
+      context: .
+      args:
+        CODEX_VERSION: "0.146.0"
+    image: stocknoob-codex:latest
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      BASE_URL: ${BASE_URL:-}
+      TECHNICAL_URL: ${TECHNICAL_URL:-${BASE_URL:-}/technical}
+      RECOMMENDATION_URL: ${RECOMMENDATION_URL:-${BASE_URL:-}/analytics/daily_recommendations?rolling_window=10dd}
+      INSTRUCTIONS_PATH: ${INSTRUCTIONS_PATH:-instructions/stock-upside-analysis-instructions.md}
+      MINIMUM_SCORE: ${MINIMUM_SCORE:-0.5}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - ./analysisResults:/app/analysisResults
+      - codex-home:/root/.codex
+      - ${HOME}/.codex:/host-codex:ro
+    command: ["python", "run_detailed_analysis.py"]
+  initialize-fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: stocknoob-api:latest
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./analysisResults:/app/analysisResults:ro
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/analysis', timeout=5)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  codex-home:

@@ -1,7 +1,7 @@
-import json
 import os
-import subprocess
 import sys
+import json
+import subprocess
 from pathlib import Path
 
 from detailedAnalysis.helper import (
@@ -26,7 +26,7 @@ def main(ticker: str, timeout: float = 30.0) -> int:
         if not instructions_path.is_absolute():
             instructions_path = PROJECT_DIR / instructions_path
 
-        output_path = PROJECT_DIR / 'analysisResults' / f"{ticker}-stock-analysis.md"
+        output_path = PROJECT_DIR / 'analysisResults' / f"{ticker}.md"
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         technical_url = build_technical_url(ticker)

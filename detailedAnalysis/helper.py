@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-import json
 import os
+import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
 from typing import Any
+from pathlib import Path
+
 
 
 def load_env(path: Path) -> None:
