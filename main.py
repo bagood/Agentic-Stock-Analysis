@@ -11,8 +11,8 @@ PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
 
 
-def select_positive_tickers(payload: Any) -> list[str]:
-    """Return unique tickers whose recommendation score is above zero."""
+def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
+    """Return unique tickers whose score is above the configured minimum."""
     if not isinstance(payload, dict):
         raise ValueError("Recommendations response must be a JSON object")
 
@@ -34,7 +34,7 @@ def select_positive_tickers(payload: Any) -> list[str]:
             raise ValueError(f"Recommendation at index {index} has an invalid score")
 
         normalized_ticker = ticker.strip().upper()
-        if score > 0.5 and normalized_ticker not in seen:
+        if score > minimum_score and normalized_ticker not in seen:
             tickers.append(normalized_ticker)
             seen.add(normalized_ticker)
 
@@ -45,15 +45,16 @@ def main(timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         recommendation_url = os.environ["RECOMMENDATION_URL"]
+        minimum_score = float(os.environ["MINIMUM_SCORE"])
         recommendations = fetch_json(recommendation_url, timeout)
-        ticker_list = select_positive_tickers(recommendations)
+        ticker_list = select_positive_tickers(recommendations, minimum_score)
 
     except (KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
     if not ticker_list:
-        print("No recommendations have a score above 0.")
+        print(f"No recommendations have a score above {minimum_score}.")
         return 0
 
     failed_tickers: list[str] = []
