@@ -42,7 +42,7 @@ Build and start only the API service:
 docker compose up --build -d initialize-fastapi
 ```
 
-The API is available at `http://localhost:8000`. Set `API_PORT` to publish a
+The API is available at `http://localhost:8003`. Set `API_PORT` to publish a
 different host port, for example:
 
 ```bash

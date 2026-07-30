@@ -1,10 +1,12 @@
+name: agentic-stock-analysis
+
 services:
-  stocknoob:
+  agentic-stock-analysis:
     build:
       context: .
       args:
         CODEX_VERSION: "0.146.0"
-    image: stocknoob-codex:latest
+    image: agentic-stock-analysis-codex:latest
     env_file:
       - path: .env
         required: false
@@ -24,9 +26,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.api
-    image: stocknoob-api:latest
+    image: agentic-stock-analysis-api:latest
     ports:
-      - "${API_PORT:-8000}:8000"
+      - "${API_PORT:-8003}:8000"
     volumes:
       - ./analysisResults:/app/analysisResults:ro
     restart: unless-stopped
