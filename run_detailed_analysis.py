@@ -1,5 +1,6 @@
 import os
 import sys
+import shutil
 from typing import Any
 from pathlib import Path
 
@@ -8,6 +9,22 @@ from detailedAnalysis.main import main as run_detailed_analysis
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
+
+
+def prepare_output_dir(output_dir_value: str) -> Path:
+    """Create the output directory and remove any existing contents."""
+    output_dir = Path(output_dir_value)
+    if not output_dir.is_absolute():
+        output_dir = PROJECT_DIR / output_dir
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    for child in output_dir.iterdir():
+        if child.is_dir() and not child.is_symlink():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+
+    return output_dir
 
 
 def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
@@ -43,6 +60,7 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
 def main(timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
+        prepare_output_dir(os.environ["OUTPUT_DIR"])
         recommendation_url = os.environ["RECOMMENDATION_URL"]
         minimum_score = float(os.environ["MINIMUM_SCORE"])
         recommendations = fetch_json(recommendation_url, timeout)

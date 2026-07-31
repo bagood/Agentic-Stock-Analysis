@@ -3,6 +3,7 @@
 set -eu
 
 : "${INSTRUCTIONS_PATH:=instructions/stock-upside-analysis-instructions.md}"
+: "${OUTPUT_DIR:=analysisResults}"
 : "${BASE_URL:=}"
 : "${TECHNICAL_URL:=${BASE_URL}/technical}"
 : "${RECOMMENDATION_URL:=${BASE_URL}/analytics/daily_recommendations?rolling_window=10dd}"
@@ -15,6 +16,7 @@ fi
 
 cat > /app/.env <<EOF
 INSTRUCTIONS_PATH=${INSTRUCTIONS_PATH}
+OUTPUT_DIR=${OUTPUT_DIR}
 BASE_URL=${BASE_URL}
 TECHNICAL_URL=${TECHNICAL_URL}
 RECOMMENDATION_URL=${RECOMMENDATION_URL}

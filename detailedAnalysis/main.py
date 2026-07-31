@@ -20,14 +20,18 @@ def main(ticker: str, timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         instructions_value = os.environ["INSTRUCTIONS_PATH"]
+        output_dir_value = os.environ["OUTPUT_DIR"]
 
         ticker = normalize_ticker(ticker)
         instructions_path = Path(instructions_value)
         if not instructions_path.is_absolute():
             instructions_path = PROJECT_DIR / instructions_path
 
-        output_path = PROJECT_DIR / 'analysisResults' / f"{ticker}.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_dir = Path(output_dir_value)
+        if not output_dir.is_absolute():
+            output_dir = PROJECT_DIR / output_dir
+
+        output_path = output_dir / f"{ticker}.md"
 
         technical_url = build_technical_url(ticker)
         technical_data = fetch_json(technical_url, timeout)

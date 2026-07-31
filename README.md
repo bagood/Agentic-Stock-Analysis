@@ -44,6 +44,7 @@ TECHNICAL_URL=${BASE_URL}/technical
 RECOMMENDATION_URL=${BASE_URL}/analytics/daily_recommendations?rolling_window=10dd
 
 INSTRUCTIONS_PATH=instructions/stock-upside-analysis-instructions.md
+OUTPUT_DIR=analysisResults
 MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
 API_PORT=8003
