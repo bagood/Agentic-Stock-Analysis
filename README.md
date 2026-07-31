@@ -12,8 +12,13 @@ The analysis workflow:
    Markdown report.
 5. Saves each report as `analysisResults/{TICKER}.md`.
 
-The FastAPI service reads those Markdown files and provides endpoints for
-listing available tickers and retrieving an individual report.
+The web service reads those Markdown files and provides both REST endpoints and
+an MCP server for listing available tickers and retrieving an individual
+report.
+
+The API package uses this layered request flow:
+
+`router -> controller -> service -> repository -> model`
 
 ## Requirements
 
@@ -82,6 +87,18 @@ docker compose run --rm agentic-stock-analysis python -m detailedAnalysis.main S
 Replace `SMRA` with the required ticker. Existing files with the same ticker
 name are replaced by the newly generated report.
 
+## Run the FastAPI service locally
+
+Install the Python dependencies and start Uvicorn from the project root:
+
+```bash
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+The local development server is available at `http://127.0.0.1:8000`, with
+interactive API documentation at `http://127.0.0.1:8000/docs`.
+
 ## Host the FastAPI service with Docker
 
 Build and start the API in the background:
@@ -98,6 +115,7 @@ Available endpoints:
 GET /analysis
 GET /analysis/report?ticker=SMRA
 GET /docs
+MCP /mcp
 ```
 
 Example requests:
@@ -110,6 +128,46 @@ curl "http://localhost:8003/analysis/report?ticker=SMRA"
 The first request lists all Markdown reports currently present in
 `analysisResults/`. The second returns the full report for the requested
 ticker.
+
+Example responses:
+
+```json
+{
+  "tickers": ["SMRA", "SOCI"]
+}
+```
+
+```json
+{
+  "ticker": "SMRA",
+  "report": "**1. Analysis timestamp...**"
+}
+```
+
+### Connect an MCP client
+
+The same container exposes a stateless Streamable HTTP MCP server:
+
+```text
+http://localhost:8003/mcp
+```
+
+It provides these tools:
+
+- `list_analysis_tickers` lists all tickers with generated reports.
+- `get_analysis_report` accepts a required `ticker` argument and returns its
+  complete Markdown report.
+
+For example, add it to Codex CLI:
+
+```bash
+codex mcp add agentic-stock-analysis \
+  --url http://localhost:8003/mcp
+```
+
+The MCP endpoint does not currently require authentication. Keep it on a
+trusted private network or add authentication at a reverse proxy before
+exposing it publicly.
 
 To publish the API on another host port:
 
