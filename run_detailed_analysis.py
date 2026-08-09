@@ -82,6 +82,9 @@ def main(timeout: float = 30.0) -> int:
         recommendations = fetch_json(recommendation_url, timeout)
         ticker_list = select_positive_tickers(recommendations, minimum_score)
 
+        print("Selected Tickers")
+        print(ticker_list)
+        
     except (KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
