@@ -6,7 +6,8 @@ the generated reports through a small FastAPI service.
 The analysis workflow:
 
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
-2. Selects recommendations whose score is above `MINIMUM_SCORE`.
+2. Selects recommendations whose score is above `MINIMUM_SCORE`; when fewer
+   than four qualify, selects the four highest-scoring recommendations instead.
 3. Fetches technical data for each selected ticker.
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
@@ -76,7 +77,8 @@ docker compose run --rm agentic-stock-analysis
 ```
 
 This command retrieves the recommendation list, analyzes every ticker with a
-score above `MINIMUM_SCORE`, and writes the resulting Markdown files to the
+score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
+writes the resulting Markdown files to the
 local `analysisResults/` directory.
 
 To analyze one ticker directly:

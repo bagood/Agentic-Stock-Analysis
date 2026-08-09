@@ -28,7 +28,7 @@ def prepare_output_dir(output_dir_value: str) -> Path:
 
 
 def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
-    """Return unique tickers whose score is above the configured minimum."""
+    """Return qualifying tickers, or the four highest-scoring tickers."""
     if not isinstance(payload, dict):
         raise ValueError("Recommendations response must be a JSON object")
 
@@ -36,8 +36,8 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
     if not isinstance(recommendations, list):
         raise ValueError("Recommendations response is missing a recommendations list")
 
-    tickers: list[str] = []
-    seen: set[str] = set()
+    scored_tickers: list[tuple[str, float]] = []
+    ticker_indexes: dict[str, int] = {}
     for index, recommendation in enumerate(recommendations):
         if not isinstance(recommendation, dict):
             raise ValueError(f"Recommendation at index {index} must be an object")
@@ -50,9 +50,25 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
             raise ValueError(f"Recommendation at index {index} has an invalid score")
 
         normalized_ticker = ticker.strip().upper()
-        if score > minimum_score and normalized_ticker not in seen:
-            tickers.append(normalized_ticker)
-            seen.add(normalized_ticker)
+        existing_index = ticker_indexes.get(normalized_ticker)
+        if existing_index is None:
+            ticker_indexes[normalized_ticker] = len(scored_tickers)
+            scored_tickers.append((normalized_ticker, score))
+        elif score > scored_tickers[existing_index][1]:
+            scored_tickers[existing_index] = (normalized_ticker, score)
+
+    tickers = [
+        ticker for ticker, score in scored_tickers if score > minimum_score
+    ]
+    if len(tickers) < 4:
+        tickers = [
+            ticker
+            for ticker, _ in sorted(
+                scored_tickers,
+                key=lambda scored_ticker: scored_ticker[1],
+                reverse=True,
+            )[:4]
+        ]
 
     return tickers
 
