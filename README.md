@@ -8,6 +8,7 @@ The analysis workflow:
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
 2. Selects recommendations whose score is above `MINIMUM_SCORE`; when fewer
    than four qualify, selects the four highest-scoring recommendations instead.
+   It then includes tickers from `data/portfolio.csv` and removes duplicates.
 3. Fetches technical data for each selected ticker.
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
@@ -160,6 +161,15 @@ It provides these tools:
 - `list_analysis_tickers` lists all tickers with generated reports.
 - `get_analysis_report` accepts a required `ticker` argument and returns its
   complete Markdown report.
+- `list_portfolio` lists all ticker/price pairs in the portfolio.
+- `add_portfolio_ticker` adds a new `ticker` and positive `price`.
+- `modify_portfolio_ticker` changes the price of an existing ticker.
+- `delete_portfolio_ticker` removes an existing ticker.
+
+Portfolio data is stored in `data/portfolio.csv` with exactly the columns
+`ticker,price`. Tickers are normalized to uppercase. In Docker, the `data/`
+directory is bind-mounted so changes survive container recreation. Set
+`PORTFOLIO_CSV_PATH` to use a different path when running locally.
 
 For example, add it to Codex CLI:
 
@@ -202,6 +212,7 @@ container mounts the directory read-only.
 ```text
 app/                    FastAPI router, controller, service, repository, models
 analysisResults/        Generated Markdown reports
+data/                   CSV-backed ticker portfolio
 detailedAnalysis/       Individual-ticker analysis workflow
 instructions/           Prompt and analysis instructions
 run_detailed_analysis.py Recommendation filtering and batch runner

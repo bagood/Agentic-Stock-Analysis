@@ -1,6 +1,13 @@
+import csv
+import tempfile
 import unittest
+from pathlib import Path
 
-from run_detailed_analysis import select_positive_tickers
+from run_detailed_analysis import (
+    combine_tickers,
+    load_portfolio_tickers,
+    select_positive_tickers,
+)
 
 
 class SelectPositiveTickersTests(unittest.TestCase):
@@ -81,6 +88,32 @@ class SelectPositiveTickersTests(unittest.TestCase):
         selected = select_positive_tickers(payload, minimum_score=0.5)
 
         self.assertEqual(selected, ["MDIA", "OASA", "BULL", "INDY"])
+
+
+class PortfolioTickerTests(unittest.TestCase):
+    def test_loads_normalized_portfolio_tickers(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            csv_path = Path(temporary_directory) / "portfolio.csv"
+            with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerows(
+                    [["ticker", "price"], ["bbca", "9250"], [" TLKM ", "3000"]]
+                )
+
+            self.assertEqual(load_portfolio_tickers(csv_path), ["BBCA", "TLKM"])
+
+    def test_missing_portfolio_file_is_treated_as_empty(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            csv_path = Path(temporary_directory) / "missing.csv"
+            self.assertEqual(load_portfolio_tickers(csv_path), [])
+
+    def test_combines_sources_and_deduplicates_in_source_order(self) -> None:
+        combined = combine_tickers(
+            ["MDIA", "BBCA", "TLKM"],
+            ["bbca", "ASII", " tlkm "],
+        )
+
+        self.assertEqual(combined, ["MDIA", "BBCA", "TLKM", "ASII"])
 
 
 if __name__ == "__main__":

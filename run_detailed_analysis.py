@@ -1,14 +1,16 @@
+import csv
 import os
-import sys
 import shutil
-from typing import Any
+import sys
 from pathlib import Path
+from typing import Any
 
 from detailedAnalysis.helper import fetch_json, load_env
 from detailedAnalysis.main import main as run_detailed_analysis
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
+PORTFOLIO_CSV_PATH = PROJECT_DIR / "data" / "portfolio.csv"
 
 
 def prepare_output_dir(output_dir_value: str) -> Path:
@@ -73,6 +75,38 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
     return tickers
 
 
+def load_portfolio_tickers(csv_path: Path = PORTFOLIO_CSV_PATH) -> list[str]:
+    """Load normalized ticker symbols from the portfolio CSV."""
+    if not csv_path.is_file():
+        return []
+
+    with csv_path.open(newline="", encoding="utf-8") as csv_file:
+        reader = csv.DictReader(csv_file)
+        if reader.fieldnames != ["ticker", "price"]:
+            raise ValueError("Portfolio CSV must contain exactly: ticker,price")
+
+        tickers: list[str] = []
+        for row_number, row in enumerate(reader, start=2):
+            ticker = row.get("ticker")
+            if not isinstance(ticker, str) or not ticker.strip():
+                raise ValueError(
+                    f"Portfolio CSV row {row_number} has an invalid ticker"
+                )
+            tickers.append(ticker.strip().upper())
+        return tickers
+
+
+def combine_tickers(*ticker_groups: list[str]) -> list[str]:
+    """Combine ticker groups while preserving order and removing duplicates."""
+    return list(
+        dict.fromkeys(
+            ticker.strip().upper()
+            for ticker_group in ticker_groups
+            for ticker in ticker_group
+        )
+    )
+
+
 def main(timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
@@ -80,11 +114,15 @@ def main(timeout: float = 30.0) -> int:
         recommendation_url = os.environ["RECOMMENDATION_URL"]
         minimum_score = float(os.environ["MINIMUM_SCORE"])
         recommendations = fetch_json(recommendation_url, timeout)
-        ticker_list = select_positive_tickers(recommendations, minimum_score)
+        recommendation_tickers = select_positive_tickers(
+            recommendations, minimum_score
+        )
+        portfolio_tickers = load_portfolio_tickers()
+        ticker_list = combine_tickers(recommendation_tickers, portfolio_tickers)
 
         print("Selected Tickers")
         print(ticker_list)
-        
+
     except (KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
