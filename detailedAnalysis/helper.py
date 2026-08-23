@@ -43,23 +43,36 @@ def normalize_ticker(ticker: str) -> str:
     return normalized
 
 
-def build_technical_url(ticker: str) -> str:
-    """Add the ticker query parameter to the technical-data URL."""
-    base_url = os.environ["TECHNICAL_URL"]
+def build_api_url(
+    base_url: str,
+    path: str,
+    query_parameters: list[tuple[str, str]] | None = None,
+) -> str:
+    """Build an API URL from a configured base URL and endpoint path."""
+    parsed = urllib.parse.urlsplit(base_url.strip())
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("BASE_URL must be an absolute HTTP or HTTPS URL")
 
-    parsed = urllib.parse.urlsplit(base_url)
+    base_path = parsed.path.rstrip("/")
+    endpoint_path = path.strip("/")
+    combined_path = f"{base_path}/{endpoint_path}" if endpoint_path else base_path
     query = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
-    query.append(("ticker", ticker))
-    
+    query.extend(query_parameters or [])
+
     return urllib.parse.urlunsplit(
         (
             parsed.scheme,
             parsed.netloc,
-            parsed.path,
+            combined_path,
             urllib.parse.urlencode(query),
             parsed.fragment,
         )
     )
+
+
+def build_technical_url(base_url: str, ticker: str) -> str:
+    """Add the ticker query parameter to the technical-data URL."""
+    return build_api_url(base_url, "technical", [("ticker", ticker)])
 
 
 def fetch_json(url: str, timeout: float) -> Any:
@@ -89,11 +102,16 @@ def fetch_json(url: str, timeout: float) -> Any:
         raise RuntimeError(f"GET {url} did not return valid JSON: {exc}") from exc
 
 
-def build_prompt(instructions: str, technical_data: str, ticker: str) -> str:
+def build_prompt(
+    instructions: str,
+    technical_data: str,
+    ticker: str,
+    forecast_horizon: str,
+) -> str:
     """Assemble the instructions, request, and technical JSON for Codex."""
     analysis_request = (
         f"Analyze the IDX-listed stock with ticker {ticker} (IDX: {ticker}) "
-        "over the next 10–20 calendar days. Use IDR, moderate risk tolerance, "
+        f"over the next {forecast_horizon}. Use IDR, moderate risk tolerance, "
         "and no assumed entry price. Follow every instruction above."
     )
     return (

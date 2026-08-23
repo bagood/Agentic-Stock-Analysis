@@ -1,15 +1,17 @@
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
 
 class PortfolioPosition(BaseModel):
-    """One ticker and its tracked price."""
+    """One ticker, tracked price, and assigned analysis window."""
 
     model_config = ConfigDict(frozen=True)
 
     ticker: str
     price: Decimal
+    rolling_window: Literal["5dd", "10dd"]
 
 
 class Portfolio(BaseModel):

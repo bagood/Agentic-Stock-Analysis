@@ -1,4 +1,3 @@
-import os
 import sys
 import json
 import subprocess
@@ -8,20 +7,21 @@ from detailedAnalysis.helper import (
     build_prompt,
     build_technical_url,
     fetch_json,
-    load_env,
     normalize_ticker,
 )
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
-ENV_PATH = PROJECT_DIR / ".env"
 
 
-def main(ticker: str, timeout: float = 30.0) -> int:
+def main(
+    ticker: str,
+    instructions_value: str,
+    forecast_horizon: str,
+    base_url: str,
+    output_dir_value: str,
+    timeout: float = 30.0,
+) -> int:
     try:
-        load_env(ENV_PATH)
-        instructions_value = os.environ["INSTRUCTIONS_PATH"]
-        output_dir_value = os.environ["OUTPUT_DIR"]
-
         ticker = normalize_ticker(ticker)
         instructions_path = Path(instructions_value)
         if not instructions_path.is_absolute():
@@ -33,7 +33,7 @@ def main(ticker: str, timeout: float = 30.0) -> int:
 
         output_path = output_dir / f"{ticker}.md"
 
-        technical_url = build_technical_url(ticker)
+        technical_url = build_technical_url(base_url, ticker)
         technical_data = fetch_json(technical_url, timeout)
         technical_data_text = json.dumps(
             technical_data,
@@ -42,7 +42,12 @@ def main(ticker: str, timeout: float = 30.0) -> int:
         )
 
         instructions = instructions_path.read_text(encoding="utf-8")
-        prompt = build_prompt(instructions, technical_data_text, ticker)
+        prompt = build_prompt(
+            instructions,
+            technical_data_text,
+            ticker,
+            forecast_horizon,
+        )
 
         subprocess.run(
             [
@@ -76,7 +81,9 @@ def main(ticker: str, timeout: float = 30.0) -> int:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f"Usage: python3 {Path(__file__).name} TICKER", file=sys.stderr)
-        raise SystemExit(2)
-    raise SystemExit(main(sys.argv[1]))
+    print(
+        "Run individual analyses through run_detailed_analysis.py so the "
+        "forecast window is selected consistently.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)

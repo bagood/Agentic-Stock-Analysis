@@ -1,3 +1,4 @@
+import argparse
 import csv
 import os
 import shutil
@@ -5,12 +6,39 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from detailedAnalysis.helper import fetch_json, load_env
+from detailedAnalysis.helper import build_api_url, fetch_json, load_env
 from detailedAnalysis.main import main as run_detailed_analysis
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
 PORTFOLIO_CSV_PATH = PROJECT_DIR / "data" / "portfolio.csv"
+
+FORECAST_CONFIGS = {
+    "5-10": {
+        "instructions_path": "instructions/stock-upside-analysis-5-10-instructions.md",
+        "rolling_window": "5dd",
+        "prompt_horizon": "5–10 trading days",
+    },
+    "10-20": {
+        "instructions_path": "instructions/stock-upside-analysis-10-20-instructions.md",
+        "rolling_window": "10dd",
+        "prompt_horizon": "10–20 trading days",
+    },
+}
+
+
+def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
+    """Parse the supported forecast-window command-line option."""
+    parser = argparse.ArgumentParser(
+        description="Generate short-term stock analysis reports."
+    )
+    parser.add_argument(
+        "--forecast-window",
+        choices=tuple(FORECAST_CONFIGS),
+        default="10-20",
+        help="forecast horizon in trading days (default: 10-20)",
+    )
+    return parser.parse_args(arguments)
 
 
 def prepare_output_dir(output_dir_value: str) -> Path:
@@ -75,15 +103,23 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
     return tickers
 
 
-def load_portfolio_tickers(csv_path: Path = PORTFOLIO_CSV_PATH) -> list[str]:
-    """Load normalized ticker symbols from the portfolio CSV."""
+def load_portfolio_tickers(
+    rolling_window: str,
+    csv_path: Path = PORTFOLIO_CSV_PATH,
+) -> list[str]:
+    """Load portfolio tickers assigned to the requested rolling window."""
+    if rolling_window not in {"5dd", "10dd"}:
+        raise ValueError("Rolling window must be either 5dd or 10dd")
     if not csv_path.is_file():
         return []
 
     with csv_path.open(newline="", encoding="utf-8") as csv_file:
         reader = csv.DictReader(csv_file)
-        if reader.fieldnames != ["ticker", "price"]:
-            raise ValueError("Portfolio CSV must contain exactly: ticker,price")
+        expected_fields = ["ticker", "price", "rolling_window"]
+        if reader.fieldnames != expected_fields:
+            raise ValueError(
+                "Portfolio CSV must contain exactly: ticker,price,rolling_window"
+            )
 
         tickers: list[str] = []
         for row_number, row in enumerate(reader, start=2):
@@ -92,7 +128,13 @@ def load_portfolio_tickers(csv_path: Path = PORTFOLIO_CSV_PATH) -> list[str]:
                 raise ValueError(
                     f"Portfolio CSV row {row_number} has an invalid ticker"
                 )
-            tickers.append(ticker.strip().upper())
+            row_rolling_window = row.get("rolling_window")
+            if row_rolling_window not in {"5dd", "10dd"}:
+                raise ValueError(
+                    f"Portfolio CSV row {row_number} has an invalid rolling_window"
+                )
+            if row_rolling_window == rolling_window:
+                tickers.append(ticker.strip().upper())
         return tickers
 
 
@@ -107,17 +149,30 @@ def combine_tickers(*ticker_groups: list[str]) -> list[str]:
     )
 
 
-def main(timeout: float = 30.0) -> int:
+def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
-        prepare_output_dir(os.environ["OUTPUT_DIR"])
-        recommendation_url = os.environ["RECOMMENDATION_URL"]
+        forecast_config = FORECAST_CONFIGS[forecast_window]
+        output_dir = prepare_output_dir(
+            str(
+                Path(os.environ["OUTPUT_DIR"])
+                / forecast_config["rolling_window"]
+            )
+        )
+        base_url = os.environ["BASE_URL"]
+        recommendation_url = build_api_url(
+            base_url,
+            "analytics/daily_recommendations",
+            [("rolling_window", forecast_config["rolling_window"])],
+        )
         minimum_score = float(os.environ["MINIMUM_SCORE"])
         recommendations = fetch_json(recommendation_url, timeout)
         recommendation_tickers = select_positive_tickers(
             recommendations, minimum_score
         )
-        portfolio_tickers = load_portfolio_tickers()
+        portfolio_tickers = load_portfolio_tickers(
+            forecast_config["rolling_window"]
+        )
         ticker_list = combine_tickers(recommendation_tickers, portfolio_tickers)
 
         print("Selected Tickers")
@@ -134,7 +189,14 @@ def main(timeout: float = 30.0) -> int:
     failed_tickers: list[str] = []
     for ticker in ticker_list:
         print(f"Running detailed analysis for {ticker.upper()}...")
-        if run_detailed_analysis(ticker) != 0:
+        if run_detailed_analysis(
+            ticker,
+            forecast_config["instructions_path"],
+            forecast_config["prompt_horizon"],
+            base_url,
+            str(output_dir),
+            timeout,
+        ) != 0:
             failed_tickers.append(ticker.upper())
 
     if failed_tickers:
@@ -148,4 +210,5 @@ def main(timeout: float = 30.0) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    arguments = parse_args()
+    raise SystemExit(main(arguments.forecast_window))

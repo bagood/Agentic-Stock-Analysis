@@ -42,9 +42,10 @@ mcp_server = MCPServer(
     instructions=(
         "Use list_analysis_tickers to discover available reports, then use "
         "get_analysis_report with one of those ticker symbols. Use list_portfolio "
-        "before adding, modifying, or deleting CSV-backed portfolio positions."
+        "before adding, modifying, or deleting CSV-backed portfolio positions. "
+        "Portfolio mutations require a rolling_window of 5dd or 10dd."
     ),
-    version="1.1.0",
+    version="1.2.0",
 )
 
 
@@ -76,26 +77,30 @@ def get_analysis_report(ticker: str) -> AnalysisReport:
 
 @mcp_server.tool(structured_output=True, annotations=_read_only_annotations)
 def list_portfolio() -> Portfolio:
-    """List every ticker and price stored in the portfolio CSV file."""
+    """List every ticker, price, and rolling window in the portfolio."""
     return _portfolio_service.list_positions()
 
 
 @mcp_server.tool(structured_output=True, annotations=_write_annotations)
-def add_portfolio_ticker(ticker: str, price: float) -> PortfolioMutation:
-    """Add a new ticker and positive price to the portfolio."""
-    return _portfolio_service.add(ticker, price)
+def add_portfolio_ticker(
+    ticker: str, price: float, rolling_window: str
+) -> PortfolioMutation:
+    """Add a ticker for rolling window 5dd or 10dd to the portfolio."""
+    return _portfolio_service.add(ticker, price, rolling_window)
 
 
 @mcp_server.tool(structured_output=True, annotations=_update_annotations)
-def modify_portfolio_ticker(ticker: str, price: float) -> PortfolioMutation:
-    """Replace the price of a ticker that already exists in the portfolio."""
-    return _portfolio_service.update(ticker, price)
+def modify_portfolio_ticker(
+    ticker: str, price: float, rolling_window: str
+) -> PortfolioMutation:
+    """Replace the price of a ticker in the specified rolling window."""
+    return _portfolio_service.update(ticker, price, rolling_window)
 
 
 @mcp_server.tool(structured_output=True, annotations=_update_annotations)
-def delete_portfolio_ticker(ticker: str) -> PortfolioMutation:
-    """Delete an existing ticker from the portfolio."""
-    return _portfolio_service.delete(ticker)
+def delete_portfolio_ticker(ticker: str, rolling_window: str) -> PortfolioMutation:
+    """Delete a ticker from the specified rolling window."""
+    return _portfolio_service.delete(ticker, rolling_window)
 
 
 mcp_http_app: Starlette = mcp_server.streamable_http_app(

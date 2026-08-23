@@ -12,7 +12,8 @@ The analysis workflow:
 3. Fetches technical data for each selected ticker.
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
-5. Saves each report as `analysisResults/{TICKER}.md`.
+5. Saves each report under its rolling window as
+   `analysisResults/{ROLLING_WINDOW}/{TICKER}.md`.
 
 The web service reads those Markdown files and provides both REST endpoints and
 an MCP server for listing available tickers and retrieving an individual
@@ -38,14 +39,11 @@ Create the local environment file:
 cp .env.example .env
 ```
 
-Edit `.env` and provide the URLs used by the analysis workflow:
+Edit `.env` and provide the base URL used by the analysis workflow:
 
 ```dotenv
 BASE_URL=http://your-data-api:8000
-TECHNICAL_URL=${BASE_URL}/technical
-RECOMMENDATION_URL=${BASE_URL}/analytics/daily_recommendations?rolling_window=10dd
 
-INSTRUCTIONS_PATH=instructions/stock-upside-analysis-instructions.md
 OUTPUT_DIR=analysisResults
 MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
@@ -77,19 +75,33 @@ Run the complete recommendation-based analysis once:
 docker compose run --rm agentic-stock-analysis
 ```
 
-This command retrieves the recommendation list, analyzes every ticker with a
-score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
-writes the resulting Markdown files to the
-local `analysisResults/` directory.
-
-To analyze one ticker directly:
+The default forecast window is `10-20` trading days. Choose either supported
+window explicitly with:
 
 ```bash
-docker compose run --rm agentic-stock-analysis python -m detailedAnalysis.main SMRA
+docker compose run --rm agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 5-10
+
+docker compose run --rm agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 10-20
 ```
 
-Replace `SMRA` with the required ticker. Existing files with the same ticker
-name are replaced by the newly generated report.
+The `5-10` mode uses
+`instructions/stock-upside-analysis-5-10-instructions.md` and requests the
+recommendation API's `5dd` rolling window. The `10-20` mode uses
+`instructions/stock-upside-analysis-10-20-instructions.md` and requests `10dd`.
+These are the only accepted forecast-window values. Technical and
+recommendation endpoint URLs are derived from `BASE_URL`.
+
+This command retrieves the recommendation list, analyzes every ticker with a
+score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
+writes the resulting Markdown files to either the local `analysisResults/5dd/`
+or `analysisResults/10dd/` directory. A run clears and replaces reports only
+inside its selected rolling-window directory; reports for the other window are
+preserved.
+
+Existing files with the same ticker name are replaced by newly generated
+reports.
 
 ## Run the FastAPI service locally
 
@@ -162,14 +174,18 @@ It provides these tools:
 - `get_analysis_report` accepts a required `ticker` argument and returns its
   complete Markdown report.
 - `list_portfolio` lists all ticker/price pairs in the portfolio.
-- `add_portfolio_ticker` adds a new `ticker` and positive `price`.
-- `modify_portfolio_ticker` changes the price of an existing ticker.
-- `delete_portfolio_ticker` removes an existing ticker.
+- `add_portfolio_ticker` adds a `ticker`, positive `price`, and `rolling_window`.
+- `modify_portfolio_ticker` changes the price for a ticker in a specified
+  rolling window.
+- `delete_portfolio_ticker` removes a ticker from a specified rolling window.
 
 Portfolio data is stored in `data/portfolio.csv` with exactly the columns
-`ticker,price`. Tickers are normalized to uppercase. In Docker, the `data/`
-directory is bind-mounted so changes survive container recreation. Set
-`PORTFOLIO_CSV_PATH` to use a different path when running locally.
+`ticker,price,rolling_window`. The rolling window must be `5dd` or `10dd`, and
+the same ticker may be stored once in each window. Tickers are normalized to
+uppercase. Batch analysis includes only portfolio rows matching the selected
+forecast window. In Docker, the `data/` directory is bind-mounted so changes
+survive container recreation. Set `PORTFOLIO_CSV_PATH` to use a different path
+when running locally.
 
 For example, add it to Codex CLI:
 

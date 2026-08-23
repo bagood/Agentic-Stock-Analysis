@@ -12,9 +12,6 @@ services:
         required: false
     environment:
       BASE_URL: ${BASE_URL:-}
-      TECHNICAL_URL: ${TECHNICAL_URL:-${BASE_URL:-}/technical}
-      RECOMMENDATION_URL: ${RECOMMENDATION_URL:-${BASE_URL:-}/analytics/daily_recommendations?rolling_window=10dd}
-      INSTRUCTIONS_PATH: ${INSTRUCTIONS_PATH:-instructions/stock-upside-analysis-instructions.md}
       MINIMUM_SCORE: ${MINIMUM_SCORE:-0.5}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
@@ -22,7 +19,7 @@ services:
       - ./data:/app/data:ro
       - codex-home:/root/.codex
       - ${HOME}/.codex:/host-codex:ro
-    command: ["python", "run_detailed_analysis.py"]
+    command: ["python", "run_detailed_analysis.py", "--forecast-window", "10-20"]
   initialize-fastapi:
     build:
       context: .
