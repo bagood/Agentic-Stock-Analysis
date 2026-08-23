@@ -22,8 +22,8 @@ class AnalysisRepository:
             if report_path.is_file()
         )
 
-    def get_report(self, ticker: str) -> AnalysisReport | None:
-        report_path = self._results_directory / f"{ticker}.md"
+    def get_report(self, ticker: str, rolling_window: str) -> AnalysisReport | None:
+        report_path = self._results_directory / rolling_window / f"{ticker}.md"
         if not report_path.is_file():
             return None
 

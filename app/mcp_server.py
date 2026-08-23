@@ -1,3 +1,5 @@
+from typing import Literal
+
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 from starlette.applications import Starlette
@@ -41,11 +43,13 @@ mcp_server = MCPServer(
     ),
     instructions=(
         "Use list_analysis_tickers to discover available reports, then use "
-        "get_analysis_report with one of those ticker symbols. Use list_portfolio "
+        "get_analysis_report with one of those ticker symbols and the requested "
+        "rolling_window: use 5dd for a 5-10 trading-day recommendation and 10dd "
+        "for a 10-20 trading-day recommendation. Use list_portfolio "
         "before adding, modifying, or deleting CSV-backed portfolio positions. "
         "Portfolio mutations require a rolling_window of 5dd or 10dd."
     ),
-    version="1.2.0",
+    version="1.3.0",
 )
 
 
@@ -62,15 +66,20 @@ def list_analysis_tickers() -> TickerList:
     structured_output=True,
     annotations=_read_only_annotations,
 )
-def get_analysis_report(ticker: str) -> AnalysisReport:
-    """Return the complete Markdown analysis report for one ticker."""
+def get_analysis_report(
+    ticker: str,
+    rolling_window: Literal["5dd", "10dd"],
+) -> AnalysisReport:
+    """Return a report from 5dd (5-10 days) or 10dd (10-20 days)."""
     try:
-        report = _service.get_report(ticker)
+        report = _service.get_report(ticker, rolling_window)
     except ValueError as exc:
         raise ValueError(str(exc)) from exc
 
     if report is None:
-        raise ValueError(f"Analysis report for {ticker.upper()} was not found")
+        raise ValueError(
+            f"Analysis report for {ticker.upper()} was not found in {rolling_window}"
+        )
 
     return report
 

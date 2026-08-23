@@ -34,7 +34,8 @@ def get_tickers(controller: AnalysisControllerDependency) -> TickerList:
 @router.get("/report", response_model=AnalysisReport)
 def get_report(
     ticker: str,
+    rolling_window: str,
     controller: AnalysisControllerDependency,
 ) -> AnalysisReport:
-    """Return a Markdown analysis report selected by ticker query parameter."""
-    return controller.get_report(ticker)
+    """Return a report selected by ticker and rolling-window query parameters."""
+    return controller.get_report(ticker, rolling_window)

@@ -129,7 +129,7 @@ Available endpoints:
 
 ```text
 GET /analysis
-GET /analysis/report?ticker=SMRA
+GET /analysis/report?ticker=SMRA&rolling_window=5dd
 GET /docs
 MCP /mcp
 ```
@@ -138,7 +138,7 @@ Example requests:
 
 ```bash
 curl http://localhost:8003/analysis
-curl "http://localhost:8003/analysis/report?ticker=SMRA"
+curl "http://localhost:8003/analysis/report?ticker=SMRA&rolling_window=5dd"
 ```
 
 The first request lists all Markdown reports currently present in
@@ -171,8 +171,9 @@ http://localhost:8003/mcp
 It provides these tools:
 
 - `list_analysis_tickers` lists all tickers with generated reports.
-- `get_analysis_report` accepts a required `ticker` argument and returns its
-  complete Markdown report.
+- `get_analysis_report` accepts required `ticker` and `rolling_window` arguments
+  and returns the complete Markdown report from the matching directory. Use
+  `5dd` for 5-10 trading days and `10dd` for 10-20 trading days.
 - `list_portfolio` lists all ticker/price pairs in the portfolio.
 - `add_portfolio_ticker` adds a `ticker`, positive `price`, and `rolling_window`.
 - `modify_portfolio_ticker` changes the price for a ticker in a specified

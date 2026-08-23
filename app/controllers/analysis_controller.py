@@ -13,9 +13,9 @@ class AnalysisController:
     def get_tickers(self) -> TickerList:
         return self._service.get_tickers()
 
-    def get_report(self, ticker: str) -> AnalysisReport:
+    def get_report(self, ticker: str, rolling_window: str) -> AnalysisReport:
         try:
-            report = self._service.get_report(ticker)
+            report = self._service.get_report(ticker, rolling_window)
         except ValueError as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -25,7 +25,10 @@ class AnalysisController:
         if report is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Analysis report for {ticker.upper()} was not found",
+                detail=(
+                    f"Analysis report for {ticker.upper()} was not found in "
+                    f"{rolling_window}"
+                ),
             )
 
         return report
