@@ -42,7 +42,8 @@ mcp_server = MCPServer(
         "Read generated stock-analysis reports and manage a CSV-backed ticker portfolio."
     ),
     instructions=(
-        "Use list_analysis_tickers to discover available reports, then use "
+        "Use list_analysis_tickers with the requested rolling_window to discover "
+        "available reports, then use "
         "get_analysis_report with one of those ticker symbols and the requested "
         "rolling_window: use 5dd for a 5-10 trading-day recommendation and 10dd "
         "for a 10-20 trading-day recommendation. Use list_portfolio "
@@ -57,9 +58,11 @@ mcp_server = MCPServer(
     structured_output=True,
     annotations=_read_only_annotations,
 )
-def list_analysis_tickers() -> TickerList:
-    """List every ticker that has a generated Markdown analysis report."""
-    return _service.get_tickers()
+def list_analysis_tickers(
+    rolling_window: Literal["5dd", "10dd"],
+) -> TickerList:
+    """List report tickers from 5dd (5-10 days) or 10dd (10-20 days)."""
+    return _service.get_tickers(rolling_window)
 
 
 @mcp_server.tool(

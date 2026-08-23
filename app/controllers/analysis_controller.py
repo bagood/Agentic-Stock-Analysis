@@ -10,8 +10,14 @@ class AnalysisController:
     def __init__(self, service: AnalysisService) -> None:
         self._service = service
 
-    def get_tickers(self) -> TickerList:
-        return self._service.get_tickers()
+    def get_tickers(self, rolling_window: str) -> TickerList:
+        try:
+            return self._service.get_tickers(rolling_window)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc),
+            ) from exc
 
     def get_report(self, ticker: str, rolling_window: str) -> AnalysisReport:
         try:

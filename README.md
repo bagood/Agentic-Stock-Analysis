@@ -128,7 +128,7 @@ The API is then available at `http://localhost:8003`.
 Available endpoints:
 
 ```text
-GET /analysis
+GET /analysis?rolling_window=5dd
 GET /analysis/report?ticker=SMRA&rolling_window=5dd
 GET /docs
 MCP /mcp
@@ -137,13 +137,13 @@ MCP /mcp
 Example requests:
 
 ```bash
-curl http://localhost:8003/analysis
+curl "http://localhost:8003/analysis?rolling_window=5dd"
 curl "http://localhost:8003/analysis/report?ticker=SMRA&rolling_window=5dd"
 ```
 
-The first request lists all Markdown reports currently present in
-`analysisResults/`. The second returns the full report for the requested
-ticker.
+The first request lists Markdown reports in the selected rolling-window
+directory. The second returns the full report for the requested ticker and
+rolling window.
 
 Example responses:
 
@@ -170,7 +170,8 @@ http://localhost:8003/mcp
 
 It provides these tools:
 
-- `list_analysis_tickers` lists all tickers with generated reports.
+- `list_analysis_tickers` accepts a required `rolling_window` and lists the
+  tickers with generated reports in that directory.
 - `get_analysis_report` accepts required `ticker` and `rolling_window` arguments
   and returns the complete Markdown report from the matching directory. Use
   `5dd` for 5-10 trading days and `10dd` for 10-20 trading days.

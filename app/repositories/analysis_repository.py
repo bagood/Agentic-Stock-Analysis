@@ -12,13 +12,14 @@ class AnalysisRepository:
     def __init__(self, results_directory: Path = ANALYSIS_RESULTS_DIR) -> None:
         self._results_directory = results_directory
 
-    def get_tickers(self) -> list[str]:
-        if not self._results_directory.is_dir():
+    def get_tickers(self, rolling_window: str) -> list[str]:
+        window_directory = self._results_directory / rolling_window
+        if not window_directory.is_dir():
             return []
 
         return sorted(
             report_path.stem.upper()
-            for report_path in self._results_directory.glob("*.md")
+            for report_path in window_directory.glob("*.md")
             if report_path.is_file()
         )
 

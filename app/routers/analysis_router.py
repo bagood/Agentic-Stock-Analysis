@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends
 
@@ -26,9 +26,12 @@ AnalysisControllerDependency = Annotated[
 
 
 @router.get("", response_model=TickerList)
-def get_tickers(controller: AnalysisControllerDependency) -> TickerList:
-    """Return all tickers that have a generated analysis report."""
-    return controller.get_tickers()
+def get_tickers(
+    rolling_window: Literal["5dd", "10dd"],
+    controller: AnalysisControllerDependency,
+) -> TickerList:
+    """Return tickers with reports in the selected rolling-window directory."""
+    return controller.get_tickers(rolling_window)
 
 
 @router.get("/report", response_model=AnalysisReport)
