@@ -2,7 +2,8 @@
 
 set -eu
 
-: "${OUTPUT_DIR:=analysisResults}"
+: "${OUTPUT_DIR:=detailedAnalysisResults}"
+: "${ENTRY_STRATEGY_OUTPUT_DIR:=entryStrategyResults}"
 : "${BASE_URL:=}"
 : "${MINIMUM_SCORE:=0.5}"
 
@@ -13,6 +14,7 @@ fi
 
 cat > /app/.env <<EOF
 OUTPUT_DIR=${OUTPUT_DIR}
+ENTRY_STRATEGY_OUTPUT_DIR=${ENTRY_STRATEGY_OUTPUT_DIR}
 BASE_URL=${BASE_URL}
 MINIMUM_SCORE=${MINIMUM_SCORE}
 EOF

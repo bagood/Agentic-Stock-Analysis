@@ -3,7 +3,7 @@ from pathlib import Path
 from app.models.analysis import AnalysisReport
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-ANALYSIS_RESULTS_DIR = PROJECT_ROOT / "analysisResults"
+ANALYSIS_RESULTS_DIR = PROJECT_ROOT / "detailedAnalysisResults"
 
 
 class AnalysisRepository:

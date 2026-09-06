@@ -7,8 +7,6 @@ services:
       args:
         CODEX_VERSION: "0.146.0"
     image: agentic-stock-analysis-codex:latest
-    ports:
-      - "127.0.0.1:${API_PORT:-8003}:8000"
     env_file:
       - path: .env
         required: false
@@ -17,11 +15,11 @@ services:
       MINIMUM_SCORE: ${MINIMUM_SCORE:-0.5}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     volumes:
-      - ./analysisResults:/app/analysisResults
+      - ./detailedAnalysisResults:/app/detailedAnalysisResults
+      - ./entryStrategyResults:/app/entryStrategyResults
       - ./data:/app/data:ro
       - codex-home:/root/.codex
       - ${HOME}/.codex:/host-codex:ro
-    command: ["python", "run_detailed_analysis.py", "--forecast-window", "10-20"]
   initialize-fastapi:
     build:
       context: .
@@ -30,7 +28,7 @@ services:
     ports:
       - "127.0.0.1:${API_PORT:-8003}:8000"
     volumes:
-      - ./analysisResults:/app/analysisResults:ro
+      - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
       - ./data:/app/data
     restart: unless-stopped
     healthcheck:

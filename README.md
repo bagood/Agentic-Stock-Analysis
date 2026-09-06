@@ -13,7 +13,9 @@ The analysis workflow:
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
 5. Saves each report under its rolling window as
-   `analysisResults/{ROLLING_WINDOW}/{TICKER}.md`.
+   `detailedAnalysisResults/{ROLLING_WINDOW}/{TICKER}.md`.
+6. A separate entry-strategy workflow can consume those reports and save
+   strategies as `entryStrategyResults/{ROLLING_WINDOW}/{TICKER}.md`.
 
 The web service reads those Markdown files and provides both REST endpoints and
 an MCP server for listing available tickers and retrieving an individual
@@ -44,7 +46,8 @@ Edit `.env` and provide the base URL used by the analysis workflow:
 ```dotenv
 BASE_URL=http://your-data-api:8000
 
-OUTPUT_DIR=analysisResults
+OUTPUT_DIR=detailedAnalysisResults
+ENTRY_STRATEGY_OUTPUT_DIR=entryStrategyResults
 MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
 API_PORT=8003
@@ -95,13 +98,31 @@ recommendation endpoint URLs are derived from `BASE_URL`.
 
 This command retrieves the recommendation list, analyzes every ticker with a
 score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
-writes the resulting Markdown files to either the local `analysisResults/5dd/`
-or `analysisResults/10dd/` directory. A run clears and replaces reports only
+writes the resulting Markdown files to either the local `detailedAnalysisResults/5dd/`
+or `detailedAnalysisResults/10dd/` directory. A run clears and replaces reports only
 inside its selected rolling-window directory; reports for the other window are
 preserved.
 
 Existing files with the same ticker name are replaced by newly generated
 reports.
+
+## Generate entry strategies with Docker
+
+Generate strategies from the analysis reports in the matching rolling window:
+
+```bash
+docker compose run --rm agentic-entry-strategy \
+  python run_entry_strategy.py --forecast-window 5-10
+
+docker compose run --rm agentic-entry-strategy \
+  python run_entry_strategy.py --forecast-window 10-20
+```
+
+The runner reads every Markdown file from `detailedAnalysisResults/5dd/` or
+`detailedAnalysisResults/10dd/`, applies the matching instruction in `instructions/`,
+and writes the result to `entryStrategyResults/5dd/` or
+`entryStrategyResults/10dd/`. It clears and replaces files only in the selected
+entry-strategy window. Run detailed analysis first when no source reports exist.
 
 ## Run the FastAPI service locally
 
@@ -130,6 +151,10 @@ Available endpoints:
 ```text
 GET /analysis?rolling_window=5dd
 GET /analysis/report?ticker=SMRA&rolling_window=5dd
+GET /portfolio
+POST /portfolio
+PUT /portfolio
+DELETE /portfolio?ticker=SMRA&rolling_window=5dd
 GET /docs
 MCP /mcp
 ```
@@ -139,11 +164,21 @@ Example requests:
 ```bash
 curl "http://localhost:8003/analysis?rolling_window=5dd"
 curl "http://localhost:8003/analysis/report?ticker=SMRA&rolling_window=5dd"
+curl "http://localhost:8003/portfolio"
+curl -X POST "http://localhost:8003/portfolio" \
+  -H "Content-Type: application/json" \
+  -d '{"ticker":"SMRA","price":"550","rolling_window":"5dd"}'
+curl -X PUT "http://localhost:8003/portfolio" \
+  -H "Content-Type: application/json" \
+  -d '{"ticker":"SMRA","price":"560","rolling_window":"5dd"}'
+curl -X DELETE \
+  "http://localhost:8003/portfolio?ticker=SMRA&rolling_window=5dd"
 ```
 
 The first request lists Markdown reports in the selected rolling-window
 directory. The second returns the full report for the requested ticker and
-rolling window.
+rolling window. The portfolio endpoints provide standalone REST operations over
+the same CSV-backed portfolio used by the MCP tools.
 
 Example responses:
 
@@ -221,7 +256,7 @@ Stop the API:
 docker compose stop initialize-fastapi
 ```
 
-The reports remain on the host because `analysisResults/` is bind-mounted into
+The reports remain on the host because `detailedAnalysisResults/` is bind-mounted into
 both containers. The analysis container has write access, while the API
 container mounts the directory read-only.
 
@@ -229,11 +264,14 @@ container mounts the directory read-only.
 
 ```text
 app/                    FastAPI router, controller, service, repository, models
-analysisResults/        Generated Markdown reports
+detailedAnalysisResults/        Generated Markdown reports
+entryStrategy/          Individual-ticker entry-strategy workflow
+entryStrategyResults/   Generated entry-strategy Markdown reports
 data/                   CSV-backed ticker portfolio
 detailedAnalysis/       Individual-ticker analysis workflow
 instructions/           Prompt and analysis instructions
 run_detailed_analysis.py Recommendation filtering and batch runner
+run_entry_strategy.py   Analysis-report entry-strategy batch runner
 Dockerfile              Analysis/Codex image
 Dockerfile.api          Lightweight FastAPI image
 docker-compose.yml      Analysis and API services

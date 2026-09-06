@@ -155,7 +155,7 @@ class PortfolioTickerTests(unittest.TestCase):
 class OutputDirectoryTests(unittest.TestCase):
     def test_clears_only_the_selected_rolling_window_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            output_root = Path(temporary_directory) / "analysisResults"
+            output_root = Path(temporary_directory) / "detailedAnalysisResults"
             selected_dir = output_root / "10dd"
             other_dir = output_root / "5dd"
             selected_dir.mkdir(parents=True)
@@ -248,7 +248,7 @@ class ForecastArgumentTests(unittest.TestCase):
             ), patch.object(runner, "load_env"), patch.object(
                 runner,
                 "prepare_output_dir",
-                return_value=Path(f"/tmp/analysisResults/{rolling_window}"),
+                return_value=Path(f"/tmp/detailedAnalysisResults/{rolling_window}"),
             ) as prepare_output, patch.object(
                 runner,
                 "fetch_json",
@@ -277,7 +277,7 @@ class ForecastArgumentTests(unittest.TestCase):
                     f"instructions/{instruction_name}",
                     horizon,
                     "https://data.example.test/",
-                    f"/tmp/analysisResults/{rolling_window}",
+                    f"/tmp/detailedAnalysisResults/{rolling_window}",
                     12.0,
                 )
 
