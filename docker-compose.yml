@@ -9,10 +9,9 @@ services:
     image: agentic-stock-analysis-codex:latest
     env_file:
       - path: .env
-        required: false
     environment:
       ML_BASE_URL: ${ML_BASE_URL:-}
-      ORGANIZER_BASE_URL: ${ORGANIZER_BASE_URL:-http://localhost:8000}
+      ORGANIZER_BASE_URL: ${ORGANIZER_BASE_URL:-http://host.docker.internal:8001}
       MINIMUM_SCORE: ${MINIMUM_SCORE:-0.5}
       DETAILED_ANALYSIS_RESULT: ${DETAILED_ANALYSIS_RESULT:-detailedAnalysisResults}
       ENTRY_STRATEGY_RESULT: ${ENTRY_STRATEGY_RESULT:-entryStrategyResults}
@@ -30,6 +29,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     image: agentic-stock-analysis-api:latest
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "127.0.0.1:${API_PORT:-8003}:8000"
     volumes:
@@ -37,19 +37,7 @@ services:
       - ./entryStrategyResults:/app/entryStrategyResults:ro
       - ./holdStrategyResults:/app/holdStrategyResults:ro
     restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/analysis', timeout=5)",
-        ]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 5s
-  mcp-server:
+  initialize-fastapi-mcp:
     build:
       context: .
       dockerfile: Dockerfile.api

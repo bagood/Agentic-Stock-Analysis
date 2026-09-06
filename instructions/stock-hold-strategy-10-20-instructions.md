@@ -29,7 +29,7 @@ Average acquisition price affects unrealized profit/loss, tax and execution cont
 
 ## Data and Decision Safety Rules
 
-1. State the report’s analysis timestamp, news cut-off, technical-data cut-off, reference price, and exact 10–20-session management window.
+1. Use the report’s analysis timestamp, news cut-off, technical-data cut-off, reference price, and exact 10–20-session management window when making the decision. Include them in the output only when needed to make one of the four summary bullets precise.
 2. If the report is stale under its own rules, contradictory, or lacks a defensible invalidation level, return **Insufficient data—refresh before deciding** unless the report already documents a severe thesis-breaking condition.
 3. Never claim the stock is currently above or below a level unless the supplied report or caller provides data proving it.
 4. Treat “sell immediately” as **sell at the next reasonably available opportunity**, not as a guaranteed price or fill. Account for overnight gaps, trading halts, liquidity, slippage, taxes, and exchange price limits qualitatively.
@@ -123,7 +123,7 @@ Use when freshness, price, levels, or evidence is inadequate to distinguish hold
 
 ### 4. Define objective position-status signals
 
-Provide a state table:
+Determine the following position states internally. Do not output a separate state table; incorporate only the decisive current and future conditions into the required decision-summary bullets:
 
 | State | Meaning | Observable conditions | Required action |
 | --- | --- | --- | --- |
@@ -156,28 +156,20 @@ Specify:
 
 ## Required Output Structure
 
-1. **Decision timestamp, source cut-offs, and 10–20-session window**
-2. **Position and source-data validation**
-3. **Current position P/L** when estimable
-4. **Forward hold thesis versus sell thesis**
-5. **Remaining upside, downside, expected value, and reward-to-risk**
-6. **Catalyst and overnight-risk calendar**
-7. **Primary decision: Hold / Tighten / Partial sell / Sell immediately / Insufficient data**
-8. **Position-status signal table**
-9. **Profit-taking, tactical exit, structural invalidation, and time-exit plan**
-10. **Daily, catalyst, and five-session monitoring checklist**
-11. **Final decision summary**
+Return **only** the decision summary below. The heading must be exactly **Hold Strategy**. Do not output an introduction, validation section, P/L section, thesis comparison, calculations section, catalyst calendar, state table, management plan, monitoring checklist, disclaimer, conclusion, or any other text before or after it.
 
-The monitoring checklist must cover closing price versus tactical invalidation and targets, trend persistence, momentum, volume/flow confirmation when supplied, catalysts, gap/liquidity risk, remaining reward-to-risk, and sessions remaining.
+Use exactly this structure:
 
-End with exactly these bullets:
+```markdown
+## Hold Strategy
 
 - **Current Hold Decision:** State the single primary decision and the evidence that controls it.
 - **Sell-Immediately Conditions:** State whether an immediate-sale condition is already confirmed and list the exact conditions requiring sale at the next reasonable opportunity.
 - **Hold Conditions:** State the minimum conditions required to keep holding through the wider window and the remaining realistic targets.
 - **Risk and Profit Plan:** State the tactical risk limit, structural invalidation, partial/full profit zones, remaining reward-to-risk, catalyst response, and time exit.
+```
 
-> **Disclaimer:** This is a conditional position-management plan based solely on the supplied analysis, not a guarantee of performance or personalized financial advice. Verify fresh market data before acting and consider taxes, costs, liquidity, and personal portfolio constraints.
+Each bullet must be a single compact paragraph in the style of the supplied example. Perform all validation, P/L calculations, hold-versus-sell evaluation, state classification, catalyst assessment, and quality control silently. Include only decision-relevant results in the four bullets. If data are insufficient, state **Insufficient data—refresh before deciding** as the Current Hold Decision and identify the minimum required refresh within the same four-bullet structure.
 
 ## Quality-Control Checklist
 
@@ -193,4 +185,4 @@ End with exactly these bullets:
 - [ ] No missing quantity, acquisition price, level, cost, or current value is invented.
 - [ ] No external market data or uncited update is introduced.
 - [ ] A stale or insufficient report is not used for a false current recommendation.
-
+- [ ] The output contains only the `## Hold Strategy` heading and the four required bullets.
