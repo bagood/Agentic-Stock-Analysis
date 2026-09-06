@@ -5,6 +5,8 @@ from fastapi import FastAPI
 
 from app.mcp_server import mcp_http_app, mcp_server
 from app.routers.analysis_router import router as analysis_router
+from app.routers.entry_strategy_router import router as entry_strategy_router
+from app.routers.hold_strategy_router import router as hold_strategy_router
 from app.routers.portfolio_router import router as portfolio_router
 
 
@@ -26,5 +28,7 @@ app = FastAPI(
 )
 
 app.include_router(analysis_router)
+app.include_router(entry_strategy_router)
+app.include_router(hold_strategy_router)
 app.include_router(portfolio_router)
 app.mount("/mcp", mcp_http_app, name="mcp")

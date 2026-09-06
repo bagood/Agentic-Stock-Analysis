@@ -9,7 +9,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
-RUN mkdir -p /app/detailedAnalysisResults \
+RUN mkdir -p /app/detailedAnalysisResults /app/entryStrategyResults \
+    /app/holdStrategyResults \
     && useradd --create-home --uid 10001 apiuser \
     && chown -R apiuser:apiuser /app
 

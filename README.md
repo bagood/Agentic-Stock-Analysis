@@ -172,6 +172,10 @@ Available endpoints:
 ```text
 GET /analysis?rolling_window=5dd
 GET /analysis/report?ticker=SMRA&rolling_window=5dd
+GET /entry_strategy?rolling_window=5dd
+GET /entry_strategy/report?ticker=SMRA&rolling_window=5dd
+GET /hold_strategy?rolling_window=10dd
+GET /hold_strategy/report?ticker=INDY&rolling_window=10dd
 GET /portfolio
 POST /portfolio
 PUT /portfolio
@@ -185,6 +189,10 @@ Example requests:
 ```bash
 curl "http://localhost:8003/analysis?rolling_window=5dd"
 curl "http://localhost:8003/analysis/report?ticker=SMRA&rolling_window=5dd"
+curl "http://localhost:8003/entry_strategy?rolling_window=5dd"
+curl "http://localhost:8003/entry_strategy/report?ticker=SMRA&rolling_window=5dd"
+curl "http://localhost:8003/hold_strategy?rolling_window=10dd"
+curl "http://localhost:8003/hold_strategy/report?ticker=INDY&rolling_window=10dd"
 curl "http://localhost:8003/portfolio"
 curl -X POST "http://localhost:8003/portfolio" \
   -H "Content-Type: application/json" \
