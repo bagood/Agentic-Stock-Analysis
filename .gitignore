@@ -6,8 +6,4 @@ __pycache__/
 
 detailedAnalysisResults/*
 entryStrategyResults/*
-!entryStrategyResults/.gitkeep
 holdStrategyResults/*
-!holdStrategyResults/.gitkeep
-
-data/*

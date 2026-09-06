@@ -35,7 +35,6 @@ services:
       - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
       - ./entryStrategyResults:/app/entryStrategyResults:ro
       - ./holdStrategyResults:/app/holdStrategyResults:ro
-      - ./data:/app/data
     restart: unless-stopped
     healthcheck:
       test:
@@ -49,6 +48,18 @@ services:
       timeout: 5s
       retries: 3
       start_period: 5s
+  mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    image: agentic-stock-analysis-api:latest
+    command: ["uvicorn", "app.mcp_main:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:${MCP_PORT:-8004}:8000"
+    volumes:
+      - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
+      - ./data:/app/data
+    restart: unless-stopped
 
 volumes:
   codex-home:

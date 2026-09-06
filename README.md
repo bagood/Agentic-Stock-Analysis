@@ -176,12 +176,7 @@ GET /entry_strategy?rolling_window=5dd
 GET /entry_strategy/report?ticker=SMRA&rolling_window=5dd
 GET /hold_strategy?rolling_window=10dd
 GET /hold_strategy/report?ticker=INDY&rolling_window=10dd
-GET /portfolio
-POST /portfolio
-PUT /portfolio
-DELETE /portfolio?ticker=SMRA&rolling_window=5dd
 GET /docs
-MCP /mcp
 ```
 
 Example requests:
@@ -193,21 +188,11 @@ curl "http://localhost:8003/entry_strategy?rolling_window=5dd"
 curl "http://localhost:8003/entry_strategy/report?ticker=SMRA&rolling_window=5dd"
 curl "http://localhost:8003/hold_strategy?rolling_window=10dd"
 curl "http://localhost:8003/hold_strategy/report?ticker=INDY&rolling_window=10dd"
-curl "http://localhost:8003/portfolio"
-curl -X POST "http://localhost:8003/portfolio" \
-  -H "Content-Type: application/json" \
-  -d '{"ticker":"SMRA","price":"550","rolling_window":"5dd"}'
-curl -X PUT "http://localhost:8003/portfolio" \
-  -H "Content-Type: application/json" \
-  -d '{"ticker":"SMRA","price":"560","rolling_window":"5dd"}'
-curl -X DELETE \
-  "http://localhost:8003/portfolio?ticker=SMRA&rolling_window=5dd"
 ```
 
 The first request lists Markdown reports in the selected rolling-window
 directory. The second returns the full report for the requested ticker and
-rolling window. The portfolio endpoints provide standalone REST operations over
-the same CSV-backed portfolio used by the MCP tools.
+rolling window.
 
 Example responses:
 
@@ -224,12 +209,19 @@ Example responses:
 }
 ```
 
-### Connect an MCP client
+### Run and connect an MCP client
 
-The same container exposes a stateless Streamable HTTP MCP server:
+The MCP server runs in its own container, separately from the REST API. Start it
+with:
+
+```bash
+docker compose up --build -d mcp-server
+```
+
+Its stateless Streamable HTTP endpoint is:
 
 ```text
-http://localhost:8003/mcp
+http://localhost:8004/mcp
 ```
 
 It provides these tools:
@@ -257,12 +249,13 @@ For example, add it to Codex CLI:
 
 ```bash
 codex mcp add agentic-stock-analysis \
-  --url http://localhost:8003/mcp
+  --url http://localhost:8004/mcp
 ```
 
-The MCP endpoint does not currently require authentication. Keep it on a
-trusted private network or add authentication at a reverse proxy before
-exposing it publicly.
+The MCP endpoint does not currently require authentication. It is bound to
+localhost by default; keep it on a trusted private network or add authentication
+at a reverse proxy before exposing it publicly. Override its host port with
+`MCP_PORT`.
 
 To publish the API on another host port:
 
