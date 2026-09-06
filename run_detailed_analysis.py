@@ -155,7 +155,7 @@ def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
         forecast_config = FORECAST_CONFIGS[forecast_window]
         output_dir = prepare_output_dir(
             str(
-                Path(os.environ["OUTPUT_DIR"])
+                Path(os.environ["DETAILED_ANALYSIS_RESULT"])
                 / forecast_config["rolling_window"]
             )
         )

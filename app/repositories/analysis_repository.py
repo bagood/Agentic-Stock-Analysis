@@ -3,13 +3,13 @@ from pathlib import Path
 from app.models.analysis import AnalysisReport
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-ANALYSIS_RESULTS_DIR = PROJECT_ROOT / "detailedAnalysisResults"
+DETAILED_ANALYSIS_RESULT = PROJECT_ROOT / "detailedAnalysisResults"
 
 
 class AnalysisRepository:
     """Read generated analysis reports from the filesystem."""
 
-    def __init__(self, results_directory: Path = ANALYSIS_RESULTS_DIR) -> None:
+    def __init__(self, results_directory: Path = DETAILED_ANALYSIS_RESULT) -> None:
         self._results_directory = results_directory
 
     def get_tickers(self, rolling_window: str) -> list[str]:

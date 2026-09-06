@@ -241,7 +241,7 @@ class ForecastArgumentTests(unittest.TestCase):
                 os.environ,
                 {
                     "BASE_URL": "https://data.example.test/",
-                    "OUTPUT_DIR": "unused-in-test",
+                    "DETAILED_ANALYSIS_RESULT": "unused-in-test",
                     "MINIMUM_SCORE": "0.5",
                 },
                 clear=False,

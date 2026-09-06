@@ -84,8 +84,8 @@ class EntryStrategyOutputTests(unittest.TestCase):
             with patch.dict(
                 os.environ,
                 {
-                    "OUTPUT_DIR": str(root / "detailedAnalysisResults"),
-                    "ENTRY_STRATEGY_OUTPUT_DIR": str(strategy_root),
+                    "DETAILED_ANALYSIS_RESULT": str(root / "detailedAnalysisResults"),
+                    "ENTRY_STRATEGY_RESULT": str(strategy_root),
                 },
                 clear=False,
             ), patch.object(runner, "load_env"), patch.object(
@@ -110,8 +110,8 @@ class EntryStrategyOutputTests(unittest.TestCase):
             with patch.dict(
                 os.environ,
                 {
-                    "OUTPUT_DIR": str(root / "detailedAnalysisResults"),
-                    "ENTRY_STRATEGY_OUTPUT_DIR": str(
+                    "DETAILED_ANALYSIS_RESULT": str(root / "detailedAnalysisResults"),
+                    "ENTRY_STRATEGY_RESULT": str(
                         root / "entryStrategyResults"
                     ),
                 },
@@ -127,4 +127,3 @@ class EntryStrategyOutputTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

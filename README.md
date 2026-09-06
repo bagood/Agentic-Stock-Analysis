@@ -46,8 +46,9 @@ Edit `.env` and provide the base URL used by the analysis workflow:
 ```dotenv
 BASE_URL=http://your-data-api:8000
 
-OUTPUT_DIR=detailedAnalysisResults
-ENTRY_STRATEGY_OUTPUT_DIR=entryStrategyResults
+DETAILED_ANALYSIS_RESULT=detailedAnalysisResults
+ENTRY_STRATEGY_RESULT=entryStrategyResults
+HOLD_STRATEGY_RESULT=holdStrategyResults
 MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
 API_PORT=8003
@@ -123,6 +124,26 @@ The runner reads every Markdown file from `detailedAnalysisResults/5dd/` or
 and writes the result to `entryStrategyResults/5dd/` or
 `entryStrategyResults/10dd/`. It clears and replaces files only in the selected
 entry-strategy window. Run detailed analysis first when no source reports exist.
+
+## Generate hold strategies with Docker
+
+Hold strategies are generated only for positions in `data/portfolio.csv` that
+match the selected rolling window. The stored portfolio price is passed as the
+position's average acquisition price, and the matching detailed-analysis report
+provides the market thesis and risk levels.
+
+Use the existing analysis service and override its command:
+
+```bash
+docker compose run --rm agentic-stock-analysis \
+  python run_hold_strategy.py --forecast-window 5-10
+
+docker compose run --rm agentic-stock-analysis \
+  python run_hold_strategy.py --forecast-window 10-20
+```
+
+Results are written to `holdStrategyResults/5dd/` or
+`holdStrategyResults/10dd/`. Only the selected output window is replaced.
 
 ## Run the FastAPI service locally
 
@@ -267,11 +288,14 @@ app/                    FastAPI router, controller, service, repository, models
 detailedAnalysisResults/        Generated Markdown reports
 entryStrategy/          Individual-ticker entry-strategy workflow
 entryStrategyResults/   Generated entry-strategy Markdown reports
+holdStrategy/           Individual-position hold-strategy workflow
+holdStrategyResults/    Generated hold-strategy Markdown reports
 data/                   CSV-backed ticker portfolio
 detailedAnalysis/       Individual-ticker analysis workflow
 instructions/           Prompt and analysis instructions
 run_detailed_analysis.py Recommendation filtering and batch runner
 run_entry_strategy.py   Analysis-report entry-strategy batch runner
+run_hold_strategy.py    Portfolio hold-strategy batch runner
 Dockerfile              Analysis/Codex image
 Dockerfile.api          Lightweight FastAPI image
 docker-compose.yml      Analysis and API services

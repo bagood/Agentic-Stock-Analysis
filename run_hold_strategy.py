@@ -5,20 +5,20 @@ import sys
 from pathlib import Path
 
 from detailedAnalysis.helper import load_env
-from entryStrategy.helper import list_analysis_reports
-from entryStrategy.main import main as generate_entry_strategy
+from holdStrategy.helper import load_holdings
+from holdStrategy.main import main as generate_hold_strategy
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
 
 WINDOW_CONFIGS = {
     "5-10": {
-        "instructions_path": "instructions/stock-entry-strategy-5-10-instructions.md",
+        "instructions_path": "instructions/stock-hold-strategy-5-10-instructions.md",
         "rolling_window": "5dd",
         "trading_window": "5–10 trading sessions",
     },
     "10-20": {
-        "instructions_path": "instructions/stock-entry-strategy-10-20-instructions.md",
+        "instructions_path": "instructions/stock-hold-strategy-10-20-instructions.md",
         "rolling_window": "10dd",
         "trading_window": "10–20 trading sessions",
     },
@@ -27,13 +27,13 @@ WINDOW_CONFIGS = {
 
 def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate entry strategies from stock-analysis reports."
+        description="Generate hold strategies for portfolio positions."
     )
     parser.add_argument(
         "--forecast-window",
         choices=tuple(WINDOW_CONFIGS),
         default="10-20",
-        help="entry-strategy horizon in trading days (default: 10-20)",
+        help="hold-strategy horizon in trading days (default: 10-20)",
     )
     return parser.parse_args(arguments)
 
@@ -62,39 +62,41 @@ def main(forecast_window: str = "10-20") -> int:
         analysis_root = resolve_project_path(
             os.environ.get("DETAILED_ANALYSIS_RESULT", "detailedAnalysisResults")
         )
-        strategy_root = resolve_project_path(
-            os.environ.get("ENTRY_STRATEGY_RESULT", "entryStrategyResults")
+        portfolio_path = resolve_project_path(
+            os.environ.get("PORTFOLIO_CSV_PATH", "data/portfolio.csv")
         )
-        analysis_dir = analysis_root / rolling_window
-        output_dir = prepare_output_dir(strategy_root / rolling_window)
-        analysis_reports = list_analysis_reports(analysis_dir)
+        output_root = resolve_project_path(
+            os.environ.get("HOLD_STRATEGY_RESULT", "holdStrategyResults")
+        )
+        holdings = load_holdings(portfolio_path, rolling_window)
+        output_dir = prepare_output_dir(output_root / rolling_window)
     except (KeyError, OSError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
-    if not analysis_reports:
-        print(f"No analysis reports found in {analysis_dir}.")
+    if not holdings:
+        print(f"No portfolio holdings found for {rolling_window}.")
         return 0
 
-    print("Selected analysis reports")
-    print([path.stem.upper() for path in analysis_reports])
+    print("Selected portfolio holdings")
+    print([holding.ticker for holding in holdings])
 
     failed_tickers: list[str] = []
-    for analysis_path in analysis_reports:
-        ticker = analysis_path.stem.upper()
-        print(f"Generating entry strategy for {ticker}...")
-        if generate_entry_strategy(
-            ticker,
+    for holding in holdings:
+        analysis_path = analysis_root / rolling_window / f"{holding.ticker}.md"
+        print(f"Generating hold strategy for {holding.ticker}...")
+        if generate_hold_strategy(
+            holding,
             str(analysis_path),
             config["instructions_path"],
             config["trading_window"],
             str(output_dir),
         ) != 0:
-            failed_tickers.append(ticker)
+            failed_tickers.append(holding.ticker)
 
     if failed_tickers:
         print(
-            f"Entry-strategy generation failed for: {', '.join(failed_tickers)}",
+            f"Hold-strategy generation failed for: {', '.join(failed_tickers)}",
             file=sys.stderr,
         )
         return 1
