@@ -1,5 +1,4 @@
 import argparse
-import csv
 import os
 import shutil
 import sys
@@ -11,7 +10,6 @@ from detailedAnalysis.main import main as run_detailed_analysis
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
-PORTFOLIO_CSV_PATH = PROJECT_DIR / "data" / "portfolio.csv"
 
 FORECAST_CONFIGS = {
     "5-10": {
@@ -103,39 +101,39 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
     return tickers
 
 
-def load_portfolio_tickers(
-    rolling_window: str,
-    csv_path: Path = PORTFOLIO_CSV_PATH,
-) -> list[str]:
-    """Load portfolio tickers assigned to the requested rolling window."""
-    if rolling_window not in {"5dd", "10dd"}:
-        raise ValueError("Rolling window must be either 5dd or 10dd")
-    if not csv_path.is_file():
-        return []
+def select_stock_tickers(payload: Any, trading_window: str) -> list[str]:
+    """Return normalized tickers from the stocks API response."""
+    if trading_window not in {"5dd", "10dd"}:
+        raise ValueError("Trading window must be either 5dd or 10dd")
 
-    with csv_path.open(newline="", encoding="utf-8") as csv_file:
-        reader = csv.DictReader(csv_file)
-        expected_fields = ["ticker", "price", "rolling_window"]
-        if reader.fieldnames != expected_fields:
-            raise ValueError(
-                "Portfolio CSV must contain exactly: ticker,price,rolling_window"
+    stocks = payload.get("stocks") if isinstance(payload, dict) else payload
+    if not isinstance(stocks, list):
+        raise ValueError("Stocks response must be a JSON array or contain a stocks list")
+
+    tickers: list[str] = []
+    for index, stock in enumerate(stocks):
+        if isinstance(stock, str):
+            ticker = stock
+            item_window = trading_window
+        elif isinstance(stock, dict):
+            ticker = stock.get("ticker")
+            item_window = stock.get(
+                "trading_window",
+                stock.get("rolling_window", trading_window),
             )
+        else:
+            raise ValueError(f"Stock at index {index} must be a string or object")
 
-        tickers: list[str] = []
-        for row_number, row in enumerate(reader, start=2):
-            ticker = row.get("ticker")
-            if not isinstance(ticker, str) or not ticker.strip():
-                raise ValueError(
-                    f"Portfolio CSV row {row_number} has an invalid ticker"
-                )
-            row_rolling_window = row.get("rolling_window")
-            if row_rolling_window not in {"5dd", "10dd"}:
-                raise ValueError(
-                    f"Portfolio CSV row {row_number} has an invalid rolling_window"
-                )
-            if row_rolling_window == rolling_window:
-                tickers.append(ticker.strip().upper())
-        return tickers
+        if not isinstance(ticker, str) or not ticker.strip():
+            raise ValueError(f"Stock at index {index} has an invalid ticker")
+        if item_window != trading_window:
+            raise ValueError(
+                f"Stock at index {index} has trading window {item_window!r}, "
+                f"expected {trading_window}"
+            )
+        tickers.append(ticker.strip().upper())
+
+    return list(dict.fromkeys(tickers))
 
 
 def combine_tickers(*ticker_groups: list[str]) -> list[str]:
@@ -159,21 +157,31 @@ def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
                 / forecast_config["rolling_window"]
             )
         )
-        base_url = os.environ["BASE_URL"]
+        base_url = os.environ["ML_BASE_URL"]
         recommendation_url = build_api_url(
             base_url,
             "analytics/daily_recommendations",
             [("rolling_window", forecast_config["rolling_window"])],
         )
+        stocks_url = build_api_url(
+            os.environ.get("ORGANIZER_BASE_URL", "http://localhost:8000"),
+            "stocks",
+            [("trading_window", forecast_config["rolling_window"])],
+        )
         minimum_score = float(os.environ["MINIMUM_SCORE"])
         recommendations = fetch_json(recommendation_url, timeout)
+        stocks = fetch_json(stocks_url, timeout)
         recommendation_tickers = select_positive_tickers(
             recommendations, minimum_score
         )
-        portfolio_tickers = load_portfolio_tickers(
-            forecast_config["rolling_window"]
+        stock_tickers = select_stock_tickers(
+            stocks,
+            forecast_config["rolling_window"],
         )
-        ticker_list = combine_tickers(recommendation_tickers, portfolio_tickers)
+        ticker_list = combine_tickers(
+            recommendation_tickers,
+            stock_tickers,
+        )
 
         print("Selected Tickers")
         print(ticker_list)
@@ -183,7 +191,7 @@ def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
         return 1
 
     if not ticker_list:
-        print(f"No recommendations have a score above {minimum_score}.")
+        print("No tickers selected from recommendations or stocks API.")
         return 0
 
     failed_tickers: list[str] = []

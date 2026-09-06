@@ -1,4 +1,3 @@
-import csv
 import os
 import tempfile
 import unittest
@@ -7,37 +6,34 @@ from pathlib import Path
 from unittest.mock import patch
 
 import run_hold_strategy as runner
-from holdStrategy.helper import Holding, build_hold_strategy_prompt, load_holdings
+from holdStrategy.helper import Holding, build_hold_strategy_prompt, parse_holdings
 from run_hold_strategy import WINDOW_CONFIGS, parse_args, prepare_output_dir
 
 
 class HoldStrategyHelperTests(unittest.TestCase):
-    def test_loads_only_selected_window_and_sorts_tickers(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            csv_path = Path(temporary_directory) / "portfolio.csv"
-            with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
-                csv.writer(csv_file).writerows(
-                    [
-                        ["ticker", "price", "rolling_window"],
-                        ["tlkm", "3000", "10dd"],
-                        ["ASII", "5100.50", "5dd"],
-                        ["bbca", "9250", "5dd"],
-                    ]
-                )
+    def test_parses_stocks_object_and_sorts_tickers(self) -> None:
+        holdings = parse_holdings(
+            {
+                "stocks": [
+                    {"ticker": "bbca", "price": "9250", "trading_window": "5dd"},
+                    {"ticker": "ASII", "price": "5100.50"},
+                ]
+            },
+            "5dd",
+        )
 
-            holdings = load_holdings(csv_path, "5dd")
+        self.assertEqual([holding.ticker for holding in holdings], ["ASII", "BBCA"])
+        self.assertEqual(holdings[0].average_price, Decimal("5100.50"))
 
-            self.assertEqual([holding.ticker for holding in holdings], ["ASII", "BBCA"])
-            self.assertEqual(holdings[0].average_price, Decimal("5100.50"))
+    def test_parses_ticker_only_array_without_price(self) -> None:
+        holdings = parse_holdings(["BNBR"], "10dd")
+
+        self.assertEqual([holding.ticker for holding in holdings], ["BNBR"])
+        self.assertIsNone(holdings[0].average_price)
 
     def test_rejects_non_positive_price(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            csv_path = Path(temporary_directory) / "portfolio.csv"
-            csv_path.write_text(
-                "ticker,price,rolling_window\nBBCA,0,5dd\n", encoding="utf-8"
-            )
-            with self.assertRaisesRegex(ValueError, "invalid price"):
-                load_holdings(csv_path, "5dd")
+        with self.assertRaisesRegex(ValueError, "invalid price"):
+            parse_holdings([{"ticker": "BBCA", "price": 0}], "5dd")
 
     def test_prompt_includes_position_and_delimited_analysis(self) -> None:
         holding = Holding("BBCA", Decimal("9250"), "5dd")
@@ -49,6 +45,14 @@ class HoldStrategyHelperTests(unittest.TestCase):
         self.assertIn("Quantity: Not supplied", prompt)
         self.assertIn("<ANALYSIS_REPORT>\n# Analysis\nEvidence", prompt)
         self.assertTrue(prompt.endswith("</ANALYSIS_REPORT>\n"))
+
+    def test_prompt_marks_missing_average_price(self) -> None:
+        holding = Holding("BBCA", None, "5dd")
+        prompt = build_hold_strategy_prompt(
+            "Instructions", "Analysis", holding, "5–10 sessions"
+        )
+
+        self.assertIn("Average acquisition price: Not supplied", prompt)
 
 
 class HoldStrategyArgumentTests(unittest.TestCase):
@@ -85,35 +89,38 @@ class HoldStrategyRunnerTests(unittest.TestCase):
             self.assertEqual(list(selected.iterdir()), [])
             self.assertTrue((other / "KEEP.md").is_file())
 
-    def test_main_generates_only_for_matching_portfolio_window(self) -> None:
+    def test_main_fetches_stocks_api_for_selected_window(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
             analysis_dir = root / "detailedAnalysisResults" / "10dd"
             analysis_dir.mkdir(parents=True)
             analysis_path = analysis_dir / "INDY.md"
             analysis_path.write_text("analysis", encoding="utf-8")
-            portfolio_path = root / "portfolio.csv"
-            portfolio_path.write_text(
-                "ticker,price,rolling_window\nINDY,2680,10dd\nBIPI,154,5dd\n",
-                encoding="utf-8",
-            )
             output_root = root / "holdStrategyResults"
 
             with patch.dict(
                 os.environ,
                 {
                     "DETAILED_ANALYSIS_RESULT": str(root / "detailedAnalysisResults"),
-                    "PORTFOLIO_CSV_PATH": str(portfolio_path),
                     "HOLD_STRATEGY_RESULT": str(output_root),
+                    "ORGANIZER_BASE_URL": "http://localhost:8000",
                 },
                 clear=False,
             ), patch.object(runner, "load_env"), patch.object(
+                runner,
+                "fetch_json",
+                return_value=["INDY"],
+            ) as fetch_json, patch.object(
                 runner, "generate_hold_strategy", return_value=0
             ) as generate:
-                result = runner.main("10-20")
+                result = runner.main("10-20", timeout=12.0)
 
             self.assertEqual(result, 0)
-            holding = Holding("INDY", Decimal("2680"), "10dd")
+            fetch_json.assert_called_once_with(
+                "http://localhost:8000/stocks?trading_window=10dd",
+                12.0,
+            )
+            holding = Holding("INDY", None, "10dd")
             generate.assert_called_once_with(
                 holding,
                 str(analysis_path),
@@ -125,20 +132,20 @@ class HoldStrategyRunnerTests(unittest.TestCase):
     def test_missing_analysis_is_reported_as_a_ticker_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory)
-            portfolio_path = root / "portfolio.csv"
-            portfolio_path.write_text(
-                "ticker,price,rolling_window\nBBCA,9250,5dd\n", encoding="utf-8"
-            )
 
             with patch.dict(
                 os.environ,
                 {
                     "DETAILED_ANALYSIS_RESULT": str(root / "detailedAnalysisResults"),
-                    "PORTFOLIO_CSV_PATH": str(portfolio_path),
                     "HOLD_STRATEGY_RESULT": str(root / "holdStrategyResults"),
+                    "ORGANIZER_BASE_URL": "http://localhost:8000",
                 },
                 clear=False,
             ), patch.object(runner, "load_env"), patch.object(
+                runner,
+                "fetch_json",
+                return_value=["BBCA"],
+            ), patch.object(
                 runner, "generate_hold_strategy", return_value=1
             ):
                 self.assertEqual(runner.main("5-10"), 1)

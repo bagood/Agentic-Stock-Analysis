@@ -4,8 +4,8 @@ import shutil
 import sys
 from pathlib import Path
 
-from detailedAnalysis.helper import load_env
-from holdStrategy.helper import load_holdings
+from detailedAnalysis.helper import build_api_url, fetch_json, load_env
+from holdStrategy.helper import parse_holdings
 from holdStrategy.main import main as generate_hold_strategy
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -54,7 +54,7 @@ def prepare_output_dir(output_dir: Path) -> Path:
     return output_dir
 
 
-def main(forecast_window: str = "10-20") -> int:
+def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         config = WINDOW_CONFIGS[forecast_window]
@@ -62,23 +62,25 @@ def main(forecast_window: str = "10-20") -> int:
         analysis_root = resolve_project_path(
             os.environ.get("DETAILED_ANALYSIS_RESULT", "detailedAnalysisResults")
         )
-        portfolio_path = resolve_project_path(
-            os.environ.get("PORTFOLIO_CSV_PATH", "data/portfolio.csv")
+        stocks_url = build_api_url(
+            os.environ.get("ORGANIZER_BASE_URL", "http://localhost:8000"),
+            "stocks",
+            [("trading_window", rolling_window)],
         )
         output_root = resolve_project_path(
             os.environ.get("HOLD_STRATEGY_RESULT", "holdStrategyResults")
         )
-        holdings = load_holdings(portfolio_path, rolling_window)
+        holdings = parse_holdings(fetch_json(stocks_url, timeout), rolling_window)
         output_dir = prepare_output_dir(output_root / rolling_window)
-    except (KeyError, OSError, ValueError) as exc:
+    except (KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
 
     if not holdings:
-        print(f"No portfolio holdings found for {rolling_window}.")
+        print(f"No stocks returned for {rolling_window}.")
         return 0
 
-    print("Selected portfolio holdings")
+    print("Selected stocks")
     print([holding.ticker for holding in holdings])
 
     failed_tickers: list[str] = []

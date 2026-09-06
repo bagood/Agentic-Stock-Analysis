@@ -44,7 +44,8 @@ cp .env.example .env
 Edit `.env` and provide the base URL used by the analysis workflow:
 
 ```dotenv
-BASE_URL=http://your-data-api:8000
+ML_BASE_URL=http://your-ml-api:8000
+ORGANIZER_BASE_URL=http://localhost:8000
 
 DETAILED_ANALYSIS_RESULT=detailedAnalysisResults
 ENTRY_STRATEGY_RESULT=entryStrategyResults
@@ -62,7 +63,7 @@ When the data API runs on the host machine, containers on Docker Desktop can
 usually reach it through `host.docker.internal`, for example:
 
 ```dotenv
-BASE_URL=http://host.docker.internal:8000
+ML_BASE_URL=http://host.docker.internal:8000
 ```
 
 ## Run stock analysis with Docker
@@ -95,7 +96,7 @@ The `5-10` mode uses
 recommendation API's `5dd` rolling window. The `10-20` mode uses
 `instructions/stock-upside-analysis-10-20-instructions.md` and requests `10dd`.
 These are the only accepted forecast-window values. Technical and
-recommendation endpoint URLs are derived from `BASE_URL`.
+recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
 
 This command retrieves the recommendation list, analyzes every ticker with a
 score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
@@ -106,6 +107,12 @@ preserved.
 
 Existing files with the same ticker name are replaced by newly generated
 reports.
+
+Detailed analysis merges tickers from the recommendation endpoint on
+`ML_BASE_URL` and `GET /stocks?trading_window=5dd|10dd` on
+`ORGANIZER_BASE_URL`.
+Duplicate tickers are analyzed only once.
+The stocks endpoint may return a ticker-only JSON array such as `["BNBR"]`.
 
 ## Generate entry strategies with Docker
 
@@ -127,10 +134,11 @@ entry-strategy window. Run detailed analysis first when no source reports exist.
 
 ## Generate hold strategies with Docker
 
-Hold strategies are generated only for positions in `data/portfolio.csv` that
-match the selected rolling window. The stored portfolio price is passed as the
-position's average acquisition price, and the matching detailed-analysis report
-provides the market thesis and risk levels.
+Hold-strategy tickers are retrieved from `GET /stocks` on
+`ORGANIZER_BASE_URL`, using
+`trading_window=5dd` or `trading_window=10dd`. When the response supplies a
+stock price, it is passed as the position's average acquisition price. The
+matching detailed-analysis report provides the market thesis and risk levels.
 
 Use the existing analysis service and override its command:
 
