@@ -1,4 +1,4 @@
-# agentic-stock-analysis
+# Agentic Stock Analysis
 
 agentic-stock-analysis generates short-term stock-analysis reports and exposes
 the generated reports through a small FastAPI service.
