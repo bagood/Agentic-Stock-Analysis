@@ -119,10 +119,10 @@ The stocks endpoint may return a ticker-only JSON array such as `["BNBR"]`.
 Generate strategies from the analysis reports in the matching rolling window:
 
 ```bash
-docker compose run --rm agentic-entry-strategy \
+docker compose run --rm agentic-stock-analysis \
   python run_entry_strategy.py --forecast-window 5-10
 
-docker compose run --rm agentic-entry-strategy \
+docker compose run --rm agentic-stock-analysis \
   python run_entry_strategy.py --forecast-window 10-20
 ```
 
