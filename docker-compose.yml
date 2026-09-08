@@ -57,9 +57,44 @@ services:
         aliases:
           - agentic-mcp
     restart: unless-stopped
+  chat-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.chat
+      args:
+        CODEX_VERSION: "0.146.0"
+    image: agentic-stock-analysis-chat-api:latest
+    env_file:
+      - path: .env
+    environment:
+      ORGANIZER_BASE_URL: ${ORGANIZER_BASE_URL:-http://organizer-api:8000}
+      CHAT_MCP_URL: ${CHAT_MCP_URL:-http://agentic-mcp:8000/mcp}
+      CHAT_CODEX_TIMEOUT_SECONDS: ${CHAT_CODEX_TIMEOUT_SECONDS:-120}
+      CHAT_ORGANIZER_TIMEOUT_SECONDS: ${CHAT_ORGANIZER_TIMEOUT_SECONDS:-5}
+      CHAT_MAX_CONCURRENCY: ${CHAT_MAX_CONCURRENCY:-2}
+      CHAT_MAX_MESSAGE_CHARS: ${CHAT_MAX_MESSAGE_CHARS:-10000}
+      CHAT_MAX_RESPONSE_BYTES: ${CHAT_MAX_RESPONSE_BYTES:-1000000}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    command: ["uvicorn", "app.chat_main:app", "--host", "0.0.0.0", "--port", "8000"]
+    depends_on:
+      - initialize-fastapi-mcp
+    ports:
+      - "127.0.0.1:${CHAT_API_PORT:-8005}:8000"
+    volumes:
+      - chat-codex-home:/home/chatuser/.codex
+      - ${HOME}/.codex:/host-codex:ro
+    networks:
+      stock-backend:
+        aliases:
+          - agentic-chat-api
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    restart: unless-stopped
 
 volumes:
   codex-home:
+  chat-codex-home:
 
 networks:
   stock-backend:

@@ -54,11 +54,14 @@ HOLD_STRATEGY_RESULT=holdStrategyResults
 MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
 API_PORT=8003
+MCP_PORT=8004
+CHAT_API_PORT=8005
 ```
 
 `OPENAI_API_KEY` can remain empty when the host already has an authenticated
 Codex configuration in `~/.codex`. Docker Compose mounts that configuration
-read-only and copies it into the persistent `codex-home` volume when needed.
+read-only and copies the required authentication into persistent Codex volumes
+when needed.
 
 When the data API runs on the host machine, containers on Docker Desktop can
 usually reach it through `host.docker.internal`, for example:
@@ -224,7 +227,7 @@ The MCP server runs in its own container, separately from the REST API. Start it
 with:
 
 ```bash
-docker compose up --build -d mcp-server
+docker compose up --build -d initialize-fastapi-mcp
 ```
 
 Its stateless Streamable HTTP endpoint is:
@@ -278,6 +281,127 @@ The reports remain on the host because `detailedAnalysisResults/` is bind-mounte
 both containers. The analysis container has write access, while the API
 container mounts the directory read-only.
 
+## Run the quota-controlled chat API
+
+The chat API runs Codex CLI with access to the analysis-only MCP server. It is
+stateless and buffers each response until one chat quota unit has been consumed.
+Start the MCP and chat services with:
+
+```bash
+docker compose up --build -d initialize-fastapi-mcp chat-api
+```
+
+The API is available at `http://localhost:8005` by default. Set reusable shell
+variables with the API URL and a valid Organizer access token:
+
+```bash
+export CHAT_API_URL="http://localhost:8005"
+export CHAT_ACCESS_TOKEN="<access-token>"
+```
+
+### Chat request examples
+
+Ask Codex to list the analysis reports available for the 5-day rolling window:
+
+```bash
+curl --location "$CHAT_API_URL/chat" \
+  --header "Authorization: Bearer $CHAT_ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"message":"Which 5dd analysis reports are available?"}'
+```
+
+Ask Codex to retrieve and summarize a specific analysis report:
+
+```bash
+curl --location "$CHAT_API_URL/chat" \
+  --header "Authorization: Bearer $CHAT_ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"message":"Summarize the 10dd analysis report for BBCA, including its thesis and key risks."}'
+```
+
+Ask Codex to compare reports in the same rolling window:
+
+```bash
+curl --location "$CHAT_API_URL/chat" \
+  --header "Authorization: Bearer $CHAT_ACCESS_TOKEN" \
+  --header 'Content-Type: application/json' \
+  --data '{"message":"Compare the 5dd reports for BBCA and TLKM. Highlight their catalysts and downside risks."}'
+```
+
+Every request is stateless, so include all required tickers and rolling-window
+context in each message. A successful response resembles:
+
+```json
+{
+  "reply": "The available 5dd analysis reports are BBCA and TLKM."
+}
+```
+
+When the user has no remaining quota, the API returns HTTP 429 and does not
+start Codex:
+
+```json
+{
+  "detail": {
+    "code": "quota_exhausted",
+    "allowed": false,
+    "remaining": 0,
+    "daily_limit": 20,
+    "resets_at": "2026-09-09T00:00:00Z"
+  }
+}
+```
+
+The HTTP 429 response also includes a `Retry-After` header when the reset time
+is in the future. A missing or malformed bearer token returns HTTP 401:
+
+```json
+{
+  "detail": "Bearer authorization is required"
+}
+```
+
+Check service health without consuming quota:
+
+```bash
+curl "$CHAT_API_URL/health/live"
+curl "$CHAT_API_URL/health/ready"
+```
+
+Both endpoints return `{"status":"ok"}` when healthy. To publish the chat API
+on a different host port, set `CHAT_API_PORT` when starting it:
+
+```bash
+CHAT_API_PORT=8085 docker compose up --build -d \
+  initialize-fastapi-mcp chat-api
+curl http://localhost:8085/health/ready
+```
+
+For every request, the service checks `GET /chat-quota` on
+`ORGANIZER_BASE_URL`. If `allowed` is false, it returns HTTP 429 without
+starting Codex. After Codex succeeds, it calls `POST /chat-quota/consume` and
+releases the buffered answer only when consumption succeeds. Codex failures do
+not consume quota. The chat service fails closed when either quota operation
+cannot be completed.
+
+Codex is run in an ephemeral read-only workspace and is configured with only
+the MCP endpoint specified by `CHAT_MCP_URL`. The MCP server exposes only
+`list_analysis_tickers` and `get_analysis_report`.
+
+Useful settings:
+
+```dotenv
+CHAT_API_PORT=8005
+CHAT_MCP_URL=http://agentic-mcp:8000/mcp
+CHAT_CODEX_TIMEOUT_SECONDS=120
+CHAT_ORGANIZER_TIMEOUT_SECONDS=5
+CHAT_MAX_CONCURRENCY=2
+CHAT_MAX_MESSAGE_CHARS=10000
+CHAT_MAX_RESPONSE_BYTES=1000000
+```
+
+Health endpoints are available at `/health/live` and `/health/ready`.
+
 ## Project structure
 
 ```text
@@ -294,5 +418,6 @@ run_entry_strategy.py   Analysis-report entry-strategy batch runner
 run_hold_strategy.py    Organizer-stock hold-strategy batch runner
 Dockerfile              Analysis/Codex image
 Dockerfile.api          Lightweight FastAPI image
+Dockerfile.chat         Quota-controlled Codex chat API image
 docker-compose.yml      Analysis and API services
 ```
