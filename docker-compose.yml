@@ -10,8 +10,8 @@ services:
     env_file:
       - path: .env
     environment:
-      ML_BASE_URL: ${ML_BASE_URL:-}
-      ORGANIZER_BASE_URL: ${ORGANIZER_BASE_URL:-http://host.docker.internal:8001}
+      ML_BASE_URL: ${ML_BASE_URL:-http://ml-api:8000}
+      ORGANIZER_BASE_URL: ${ORGANIZER_BASE_URL:-http://organizer-api:8000}
       MINIMUM_SCORE: ${MINIMUM_SCORE:-0.5}
       DETAILED_ANALYSIS_RESULT: ${DETAILED_ANALYSIS_RESULT:-detailedAnalysisResults}
       ENTRY_STRATEGY_RESULT: ${ENTRY_STRATEGY_RESULT:-entryStrategyResults}
@@ -24,6 +24,8 @@ services:
       - ./data:/app/data:ro
       - codex-home:/root/.codex
       - ${HOME}/.codex:/host-codex:ro
+    networks:
+      - stock-backend
   initialize-fastapi:
     build:
       context: .
@@ -36,6 +38,10 @@ services:
       - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
       - ./entryStrategyResults:/app/entryStrategyResults:ro
       - ./holdStrategyResults:/app/holdStrategyResults:ro
+    networks:
+      stock-backend:
+        aliases:
+          - agentic-api
     restart: unless-stopped
   initialize-fastapi-mcp:
     build:
@@ -48,7 +54,16 @@ services:
     volumes:
       - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
       - ./data:/app/data
+    networks:
+      stock-backend:
+        aliases:
+          - agentic-mcp
     restart: unless-stopped
 
 volumes:
   codex-home:
+
+networks:
+  stock-backend:
+    external: true
+    name: stock-analysis-backend
