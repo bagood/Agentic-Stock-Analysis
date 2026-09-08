@@ -8,7 +8,8 @@ The analysis workflow:
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
 2. Selects recommendations whose score is above `MINIMUM_SCORE`; when fewer
    than four qualify, selects the four highest-scoring recommendations instead.
-   It then includes tickers from `data/portfolio.csv` and removes duplicates.
+   It then includes tickers returned by the Organizer stocks API and removes
+   duplicates.
 3. Fetches technical data for each selected ticker.
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
@@ -239,19 +240,6 @@ It provides these tools:
 - `get_analysis_report` accepts required `ticker` and `rolling_window` arguments
   and returns the complete Markdown report from the matching directory. Use
   `5dd` for 5-10 trading days and `10dd` for 10-20 trading days.
-- `list_portfolio` lists all ticker/price pairs in the portfolio.
-- `add_portfolio_ticker` adds a `ticker`, positive `price`, and `rolling_window`.
-- `modify_portfolio_ticker` changes the price for a ticker in a specified
-  rolling window.
-- `delete_portfolio_ticker` removes a ticker from a specified rolling window.
-
-Portfolio data is stored in `data/portfolio.csv` with exactly the columns
-`ticker,price,rolling_window`. The rolling window must be `5dd` or `10dd`, and
-the same ticker may be stored once in each window. Tickers are normalized to
-uppercase. Batch analysis includes only portfolio rows matching the selected
-forecast window. In Docker, the `data/` directory is bind-mounted so changes
-survive container recreation. Set `PORTFOLIO_CSV_PATH` to use a different path
-when running locally.
 
 For example, add it to Codex CLI:
 
@@ -299,12 +287,11 @@ entryStrategy/          Individual-ticker entry-strategy workflow
 entryStrategyResults/   Generated entry-strategy Markdown reports
 holdStrategy/           Individual-position hold-strategy workflow
 holdStrategyResults/    Generated hold-strategy Markdown reports
-data/                   CSV-backed ticker portfolio
 detailedAnalysis/       Individual-ticker analysis workflow
 instructions/           Prompt and analysis instructions
 run_detailed_analysis.py Recommendation filtering and batch runner
 run_entry_strategy.py   Analysis-report entry-strategy batch runner
-run_hold_strategy.py    Portfolio hold-strategy batch runner
+run_hold_strategy.py    Organizer-stock hold-strategy batch runner
 Dockerfile              Analysis/Codex image
 Dockerfile.api          Lightweight FastAPI image
 docker-compose.yml      Analysis and API services

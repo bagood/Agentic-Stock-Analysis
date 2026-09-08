@@ -21,7 +21,6 @@ services:
       - ./detailedAnalysisResults:/app/detailedAnalysisResults
       - ./entryStrategyResults:/app/entryStrategyResults
       - ./holdStrategyResults:/app/holdStrategyResults
-      - ./data:/app/data:ro
       - codex-home:/root/.codex
       - ${HOME}/.codex:/host-codex:ro
     networks:
@@ -53,7 +52,6 @@ services:
       - "127.0.0.1:${MCP_PORT:-8004}:8000"
     volumes:
       - ./detailedAnalysisResults:/app/detailedAnalysisResults:ro
-      - ./data:/app/data
     networks:
       stock-backend:
         aliases:
