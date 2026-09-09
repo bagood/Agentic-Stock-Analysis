@@ -288,7 +288,8 @@ stateless and buffers each response until one chat quota unit has been consumed.
 Start the MCP and chat services with:
 
 ```bash
-docker compose up --build -d initialize-fastapi-mcp chat-api
+docker compose up --build -d \
+  initialize-fastapi-mcp initialize-fastapi-assistant
 ```
 
 The API is available at `http://localhost:8005` by default. Set reusable shell
@@ -373,7 +374,7 @@ on a different host port, set `CHAT_API_PORT` when starting it:
 
 ```bash
 CHAT_API_PORT=8085 docker compose up --build -d \
-  initialize-fastapi-mcp chat-api
+  initialize-fastapi-mcp initialize-fastapi-assistant
 curl http://localhost:8085/health/ready
 ```
 
@@ -418,6 +419,6 @@ run_entry_strategy.py   Analysis-report entry-strategy batch runner
 run_hold_strategy.py    Organizer-stock hold-strategy batch runner
 Dockerfile              Analysis/Codex image
 Dockerfile.api          Lightweight FastAPI image
-Dockerfile.chat         Quota-controlled Codex chat API image
+Dockerfile.chat         Optional standalone Codex chat API image
 docker-compose.yml      Analysis and API services
 ```

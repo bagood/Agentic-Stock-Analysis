@@ -57,13 +57,12 @@ services:
         aliases:
           - agentic-mcp
     restart: unless-stopped
-  chat-api:
+  initialize-fastapi-assistant:
     build:
       context: .
-      dockerfile: Dockerfile.chat
       args:
         CODEX_VERSION: "0.146.0"
-    image: agentic-stock-analysis-chat-api:latest
+    image: agentic-stock-analysis-codex:latest
     env_file:
       - path: .env
     environment:
@@ -81,20 +80,18 @@ services:
     ports:
       - "127.0.0.1:${CHAT_API_PORT:-8005}:8000"
     volumes:
-      - chat-codex-home:/home/chatuser/.codex
+      - codex-home:/root/.codex
       - ${HOME}/.codex:/host-codex:ro
     networks:
       stock-backend:
         aliases:
-          - agentic-chat-api
-    read_only: true
+          - agentic-assistant
     tmpfs:
       - /tmp:size=64m
     restart: unless-stopped
 
 volumes:
   codex-home:
-  chat-codex-home:
 
 networks:
   stock-backend:
