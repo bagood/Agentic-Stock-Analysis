@@ -55,8 +55,8 @@ def prepare_output_dir(output_dir_value: str) -> Path:
     return output_dir
 
 
-def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
-    """Return qualifying tickers, or the four highest-scoring tickers."""
+def parse_scored_recommendations(payload: Any) -> list[tuple[str, float]]:
+    """Return unique, normalized recommendations sorted by descending score."""
     if not isinstance(payload, dict):
         raise ValueError("Recommendations response must be a JSON object")
 
@@ -64,8 +64,7 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
     if not isinstance(recommendations, list):
         raise ValueError("Recommendations response is missing a recommendations list")
 
-    scored_tickers: list[tuple[str, float]] = []
-    ticker_indexes: dict[str, int] = {}
+    ticker_scores: dict[str, float] = {}
     for index, recommendation in enumerate(recommendations):
         if not isinstance(recommendation, dict):
             raise ValueError(f"Recommendation at index {index} must be an object")
@@ -78,27 +77,108 @@ def select_positive_tickers(payload: Any, minimum_score: float) -> list[str]:
             raise ValueError(f"Recommendation at index {index} has an invalid score")
 
         normalized_ticker = ticker.strip().upper()
-        existing_index = ticker_indexes.get(normalized_ticker)
-        if existing_index is None:
-            ticker_indexes[normalized_ticker] = len(scored_tickers)
-            scored_tickers.append((normalized_ticker, score))
-        elif score > scored_tickers[existing_index][1]:
-            scored_tickers[existing_index] = (normalized_ticker, score)
+        existing_score = ticker_scores.get(normalized_ticker)
+        if existing_score is None or score > existing_score:
+            ticker_scores[normalized_ticker] = float(score)
+
+    return sorted(
+        ticker_scores.items(),
+        key=lambda scored_ticker: (-scored_ticker[1], scored_ticker[0]),
+    )
+
+
+def select_positive_tickers(
+    payload: Any,
+    minimum_score: float,
+    target_count: int = 4,
+) -> list[str]:
+    """Return up to ``target_count`` highest-scoring unique tickers."""
+    scored_tickers = parse_scored_recommendations(payload)
 
     tickers = [
         ticker for ticker, score in scored_tickers if score > minimum_score
-    ]
-    if len(tickers) < 4:
-        tickers = [
+    ][:target_count]
+    if len(tickers) < target_count:
+        selected = set(tickers)
+        tickers.extend(
             ticker
-            for ticker, _ in sorted(
-                scored_tickers,
-                key=lambda scored_ticker: scored_ticker[1],
-                reverse=True,
-            )[:4]
-        ]
+            for ticker, _ in scored_tickers
+            if ticker not in selected
+        )
 
-    return tickers
+    return tickers[:target_count]
+
+
+def select_window_recommendations(
+    payloads: dict[str, Any],
+    minimum_score: float,
+    target_count: int = 4,
+) -> dict[str, list[str]]:
+    """Allocate each recommendation to at most one rolling window.
+
+    A ticker offered by both windows belongs to the window with the higher
+    score. Equal scores belong to 10dd. Each window then receives its highest
+    ranked owned tickers, backfilled below ``minimum_score`` when necessary.
+    """
+    if set(payloads) != {"5dd", "10dd"}:
+        raise ValueError("Recommendation payloads must contain 5dd and 10dd")
+    if target_count < 1:
+        raise ValueError("Target count must be at least one")
+
+    candidates = {
+        window: parse_scored_recommendations(payloads[window])
+        for window in ("5dd", "10dd")
+    }
+    scores = {
+        window: dict(window_candidates)
+        for window, window_candidates in candidates.items()
+    }
+    owners: dict[str, str] = {}
+    for ticker in scores["5dd"].keys() | scores["10dd"].keys():
+        five_score = scores["5dd"].get(ticker)
+        ten_score = scores["10dd"].get(ticker)
+        if five_score is None:
+            owners[ticker] = "10dd"
+        elif ten_score is None or five_score > ten_score:
+            owners[ticker] = "5dd"
+        else:
+            owners[ticker] = "10dd"
+
+    selected: dict[str, list[str]] = {}
+    for window in ("5dd", "10dd"):
+        owned_payload = {
+            "recommendations": [
+                {"ticker": ticker, "score": score}
+                for ticker, score in candidates[window]
+                if owners[ticker] == window
+            ]
+        }
+        selected[window] = select_positive_tickers(
+            owned_payload,
+            minimum_score,
+            target_count,
+        )
+
+    return selected
+
+
+def describe_duplicate_assignments(payloads: dict[str, Any]) -> list[str]:
+    """Describe how recommendations shared by both windows were assigned."""
+    scores = {
+        window: dict(parse_scored_recommendations(payloads[window]))
+        for window in ("5dd", "10dd")
+    }
+    messages: list[str] = []
+    for ticker in sorted(scores["5dd"].keys() & scores["10dd"].keys()):
+        five_score = scores["5dd"][ticker]
+        ten_score = scores["10dd"][ticker]
+        owner = "5dd" if five_score > ten_score else "10dd"
+        reason = "higher score" if five_score != ten_score else "equal-score tie-break"
+        messages.append(
+            f"{ticker} assigned to {owner} ({reason}: "
+            f"5dd={five_score:g}, 10dd={ten_score:g})"
+        )
+    return messages
 
 
 def select_stock_tickers(payload: Any, trading_window: str) -> list[str]:
@@ -158,22 +238,33 @@ def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
             )
         )
         base_url = os.environ["ML_BASE_URL"]
-        recommendation_url = build_api_url(
-            base_url,
-            "analytics/daily_recommendations",
-            [("rolling_window", forecast_config["rolling_window"])],
-        )
+        recommendation_urls = {
+            rolling_window: build_api_url(
+                base_url,
+                "analytics/daily_recommendations",
+                [("rolling_window", rolling_window)],
+            )
+            for rolling_window in ("5dd", "10dd")
+        }
         stocks_url = build_api_url(
             os.environ.get("ORGANIZER_BASE_URL", "http://localhost:8000"),
             "stocks",
             [("trading_window", forecast_config["rolling_window"])],
         )
         minimum_score = float(os.environ["MINIMUM_SCORE"])
-        recommendations = fetch_json(recommendation_url, timeout)
+        recommendations = {
+            rolling_window: fetch_json(url, timeout)
+            for rolling_window, url in recommendation_urls.items()
+        }
         stocks = fetch_json(stocks_url, timeout)
-        recommendation_tickers = select_positive_tickers(
+        recommendations_by_window = select_window_recommendations(
             recommendations, minimum_score
         )
+        for assignment in describe_duplicate_assignments(recommendations):
+            print(assignment)
+        recommendation_tickers = recommendations_by_window[
+            forecast_config["rolling_window"]
+        ]
         stock_tickers = select_stock_tickers(
             stocks,
             forecast_config["rolling_window"],

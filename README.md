@@ -102,20 +102,27 @@ recommendation API's `5dd` rolling window. The `10-20` mode uses
 These are the only accepted forecast-window values. Technical and
 recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
 
-This command retrieves the recommendation list, analyzes every ticker with a
-score above `MINIMUM_SCORE` (or the top four scores when fewer qualify), and
-writes the resulting Markdown files to either the local `detailedAnalysisResults/5dd/`
-or `detailedAnalysisResults/10dd/` directory. A run clears and replaces reports only
-inside its selected rolling-window directory; reports for the other window are
-preserved.
+This command retrieves the recommendation lists for both rolling windows and
+selects up to four ML recommendations for each. When fewer than four scores are
+above `MINIMUM_SCORE`, lower-scoring recommendations backfill the remaining
+slots. A ticker recommended in both windows is assigned only to the window with
+the higher score; equal scores are assigned to `10dd`. The other window then
+continues down its ranked list so it can still select four unique tickers when
+enough candidates are available.
+
+Only the requested window is analyzed. Results are written to either the local
+`detailedAnalysisResults/5dd/` or `detailedAnalysisResults/10dd/` directory. A
+run clears and replaces reports only inside its selected rolling-window
+directory; reports for the other window are preserved.
 
 Existing files with the same ticker name are replaced by newly generated
 reports.
 
-Detailed analysis merges tickers from the recommendation endpoint on
+Detailed analysis merges the selected ML tickers from the recommendation endpoint on
 `ML_BASE_URL` and `GET /stocks?trading_window=5dd|10dd` on
 `ORGANIZER_BASE_URL`.
-Duplicate tickers are analyzed only once.
+Organizer stocks are additional to the four-ML-recommendation quota. Duplicate
+tickers within the requested window are analyzed only once.
 The stocks endpoint may return a ticker-only JSON array such as `["BNBR"]`.
 
 ## Generate entry strategies with Docker

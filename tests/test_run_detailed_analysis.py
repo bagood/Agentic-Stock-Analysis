@@ -10,9 +10,11 @@ from run_detailed_analysis import (
     FORECAST_CONFIGS,
     combine_tickers,
     parse_args,
+    parse_scored_recommendations,
     prepare_output_dir,
     select_positive_tickers,
     select_stock_tickers,
+    select_window_recommendations,
 )
 
 
@@ -94,6 +96,87 @@ class SelectPositiveTickersTests(unittest.TestCase):
         selected = select_positive_tickers(payload, minimum_score=0.5)
 
         self.assertEqual(selected, ["MDIA", "OASA", "BULL", "INDY"])
+
+    def test_caps_qualifying_recommendations_at_four(self) -> None:
+        payload = {
+            "recommendations": [
+                {"ticker": ticker, "score": score}
+                for ticker, score in (
+                    ("FIVE", 0.5),
+                    ("ONE", 0.9),
+                    ("THREE", 0.7),
+                    ("TWO", 0.8),
+                    ("FOUR", 0.6),
+                )
+            ]
+        }
+
+        self.assertEqual(
+            select_positive_tickers(payload, minimum_score=0.1),
+            ["ONE", "TWO", "THREE", "FOUR"],
+        )
+
+    def test_normalizes_duplicates_and_keeps_the_highest_score(self) -> None:
+        payload = {
+            "recommendations": [
+                {"ticker": " kota ", "score": 0.47},
+                {"ticker": "KOTA", "score": 0.52},
+            ]
+        }
+
+        self.assertEqual(parse_scored_recommendations(payload), [("KOTA", 0.52)])
+
+
+class SelectWindowRecommendationsTests(unittest.TestCase):
+    def test_assigns_duplicate_to_higher_score_and_replenishes_loser(self) -> None:
+        selected = select_window_recommendations(
+            {
+                "5dd": {
+                    "recommendations": [
+                        {"ticker": "KOTA", "score": 0.47},
+                        {"ticker": "AAAA", "score": 0.45},
+                        {"ticker": "BBBB", "score": 0.42},
+                        {"ticker": "CCCC", "score": 0.40},
+                        {"ticker": "DDDD", "score": 0.38},
+                    ]
+                },
+                "10dd": {
+                    "recommendations": [
+                        {"ticker": " kota ", "score": 0.60},
+                        {"ticker": "EEEE", "score": 0.55},
+                        {"ticker": "FFFF", "score": 0.50},
+                        {"ticker": "GGGG", "score": 0.48},
+                        {"ticker": "HHHH", "score": 0.44},
+                    ]
+                },
+            },
+            minimum_score=0.5,
+        )
+
+        self.assertEqual(selected["5dd"], ["AAAA", "BBBB", "CCCC", "DDDD"])
+        self.assertEqual(selected["10dd"], ["KOTA", "EEEE", "FFFF", "GGGG"])
+        self.assertTrue(set(selected["5dd"]).isdisjoint(selected["10dd"]))
+
+    def test_higher_five_day_score_wins_and_equal_scores_go_to_ten_day(self) -> None:
+        selected = select_window_recommendations(
+            {
+                "5dd": {
+                    "recommendations": [
+                        {"ticker": "FIVE", "score": 0.8},
+                        {"ticker": "TIE", "score": 0.7},
+                    ]
+                },
+                "10dd": {
+                    "recommendations": [
+                        {"ticker": "FIVE", "score": 0.6},
+                        {"ticker": "TIE", "score": 0.7},
+                    ]
+                },
+            },
+            minimum_score=0.5,
+        )
+
+        self.assertEqual(selected, {"5dd": ["FIVE"], "10dd": ["TIE"]})
 
 
 class SelectStockTickersTests(unittest.TestCase):
@@ -238,7 +321,8 @@ class ForecastArgumentTests(unittest.TestCase):
                 "fetch_json",
                 side_effect=[
                     {"recommendations": [{"ticker": "BBCA", "score": 0.9}]},
-                    {"stocks": [{"ticker": "TLKM"}, {"ticker": "BBCA"}]},
+                    {"recommendations": [{"ticker": "BMRI", "score": 0.8}]},
+                    {"stocks": [{"ticker": "TLKM"}]},
                 ],
             ) as fetch_json, patch.object(
                 runner, "run_detailed_analysis", return_value=0
@@ -255,7 +339,13 @@ class ForecastArgumentTests(unittest.TestCase):
                         call(
                             "https://data.example.test/analytics/"
                             "daily_recommendations?rolling_window="
-                            f"{rolling_window}",
+                            "5dd",
+                            12.0,
+                        ),
+                        call(
+                            "https://data.example.test/analytics/"
+                            "daily_recommendations?rolling_window="
+                            "10dd",
                             12.0,
                         ),
                         call(
@@ -276,7 +366,10 @@ class ForecastArgumentTests(unittest.TestCase):
                             f"/tmp/detailedAnalysisResults/{rolling_window}",
                             12.0,
                         )
-                        for ticker in ("BBCA", "TLKM")
+                        for ticker in (
+                            "BBCA" if rolling_window == "5dd" else "BMRI",
+                            "TLKM",
+                        )
                     ],
                 )
 
