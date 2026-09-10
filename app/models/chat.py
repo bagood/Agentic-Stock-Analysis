@@ -1,6 +1,9 @@
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.quota import PersistedChatMessage, QuotaStatus
 
 
 class ChatRequest(BaseModel):
@@ -17,6 +20,9 @@ class ChatResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     reply: str
+    conversation_id: UUID
+    messages: tuple[PersistedChatMessage, PersistedChatMessage]
+    quota: QuotaStatus
 
 
 class HealthResponse(BaseModel):

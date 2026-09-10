@@ -290,8 +290,10 @@ container mounts the directory read-only.
 
 ## Run the quota-controlled chat API
 
-The chat API runs Codex CLI with access to the analysis-only MCP server. It is
-stateless and buffers each response until one chat quota unit has been consumed.
+The chat API runs Codex CLI with access to the analysis-only MCP server. It
+buffers each response until the Organizer atomically consumes one quota unit
+and stores the completed user/assistant turn in the current Jakarta-day
+conversation.
 Start the MCP and chat services with:
 
 ```bash
@@ -336,12 +338,37 @@ curl --location "$CHAT_API_URL/chat" \
   --data '{"message":"Compare the 5dd reports for BBCA and TLKM. Highlight their catalysts and downside risks."}'
 ```
 
-Every request is stateless, so include all required tickers and rolling-window
-context in each message. A successful response resembles:
+Codex receives each request independently, so include all required tickers and
+rolling-window context in each message. The Organizer stores completed turns so
+the UI can restore the current day's conversation. A successful response
+resembles:
 
 ```json
 {
-  "reply": "The available 5dd analysis reports are BBCA and TLKM."
+  "reply": "The available 5dd analysis reports are BBCA and TLKM.",
+  "conversation_id": "87033aec-f74c-49ea-8812-37c15c9251e0",
+  "messages": [
+    {
+      "id": "d54894fb-dce8-435a-9334-bc2a55571a91",
+      "client_message_id": "3fc82b96-3bd6-4b2e-b57d-30cc723ac784",
+      "role": "user",
+      "content": "Which 5dd analysis reports are available?",
+      "created_at": "2026-09-10T09:14:22+07:00"
+    },
+    {
+      "id": "48cc11b6-7792-4220-bb29-1b41fd67e781",
+      "client_message_id": null,
+      "role": "assistant",
+      "content": "The available 5dd analysis reports are BBCA and TLKM.",
+      "created_at": "2026-09-10T09:14:29+07:00"
+    }
+  ],
+  "quota": {
+    "allowed": true,
+    "remaining": 4,
+    "daily_limit": 5,
+    "resets_at": "2026-09-11T00:00:00+07:00"
+  }
 }
 ```
 
@@ -355,7 +382,7 @@ start Codex:
     "allowed": false,
     "remaining": 0,
     "daily_limit": 20,
-    "resets_at": "2026-09-09T00:00:00Z"
+    "resets_at": "2026-09-11T00:00:00+07:00"
   }
 }
 ```
@@ -385,12 +412,18 @@ CHAT_API_PORT=8085 docker compose up --build -d \
 curl http://localhost:8085/health/ready
 ```
 
-For every request, the service checks `GET /chat-quota` on
-`ORGANIZER_BASE_URL`. If `allowed` is false, it returns HTTP 429 without
-starting Codex. After Codex succeeds, it calls `POST /chat-quota/consume` and
-releases the buffered answer only when consumption succeeds. Codex failures do
-not consume quota. The chat service fails closed when either quota operation
-cannot be completed.
+For every request, the service first checks `GET /chat-quota` on
+`ORGANIZER_BASE_URL`. This avoids starting Codex when quota is already
+exhausted, but it is not a reservation: a concurrent request can still consume
+the final unit. The service generates an idempotency UUID once for the request,
+then calls `POST /chat-quota/consume` with that UUID, the query, and the
+completed Codex answer. That
+operation atomically consumes quota and stores both messages. Transient consume
+failures are retried with the same UUID and payload. The answer is released only
+after Organizer returns the authoritative stored messages and nested quota.
+Codex failures do not consume quota, and the service fails closed when either
+quota operation cannot be completed. Reset timestamps come from Organizer and
+use the `Asia/Jakarta` day boundary.
 
 Codex is run in an ephemeral read-only workspace and is configured with only
 the MCP endpoint specified by `CHAT_MCP_URL`. The MCP server exposes only
@@ -403,6 +436,8 @@ CHAT_API_PORT=8005
 CHAT_MCP_URL=http://agentic-mcp:8000/mcp
 CHAT_CODEX_TIMEOUT_SECONDS=120
 CHAT_ORGANIZER_TIMEOUT_SECONDS=5
+CHAT_ORGANIZER_RETRY_ATTEMPTS=3
+CHAT_ORGANIZER_RETRY_BACKOFF_SECONDS=0.1
 CHAT_MAX_CONCURRENCY=2
 CHAT_MAX_MESSAGE_CHARS=10000
 CHAT_MAX_RESPONSE_BYTES=1000000

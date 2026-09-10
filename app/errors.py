@@ -24,9 +24,27 @@ class OrganizerAuthorizationError(RuntimeError):
 class QuotaServiceUnavailableError(RuntimeError):
     """Raised when quota state cannot be checked or consumed safely."""
 
+    def __init__(self, message: str, error_code: str | None = None) -> None:
+        super().__init__(message)
+        self.error_code = error_code
+
 
 class QuotaConsumptionRejectedError(RuntimeError):
     """Raised when an atomic consume loses a concurrent quota race."""
+
+    def __init__(
+        self,
+        message: str,
+        quota: QuotaStatus | None = None,
+        retry_after: str | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.quota = quota
+        self.retry_after = retry_after
+
+
+class ChatPersistenceRejectedError(RuntimeError):
+    """Raised when Organizer rejects a locally constructed chat payload."""
 
 
 class CodexExecutionError(RuntimeError):

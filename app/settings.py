@@ -45,6 +45,8 @@ class ChatSettings:
     max_concurrency: int
     max_message_chars: int
     max_response_bytes: int
+    organizer_retry_attempts: int = 3
+    organizer_retry_backoff_seconds: float = 0.1
 
     @classmethod
     def from_env(cls) -> "ChatSettings":
@@ -60,15 +62,17 @@ class ChatSettings:
             codex_executable=(
                 os.environ.get("CHAT_CODEX_EXECUTABLE", "codex").strip() or "codex"
             ),
-            codex_timeout_seconds=_positive_float(
-                "CHAT_CODEX_TIMEOUT_SECONDS", "120"
-            ),
+            codex_timeout_seconds=_positive_float("CHAT_CODEX_TIMEOUT_SECONDS", "120"),
             organizer_timeout_seconds=_positive_float(
                 "CHAT_ORGANIZER_TIMEOUT_SECONDS", "5"
             ),
             max_concurrency=_positive_int("CHAT_MAX_CONCURRENCY", "2"),
             max_message_chars=_positive_int("CHAT_MAX_MESSAGE_CHARS", "10000"),
-            max_response_bytes=_positive_int(
-                "CHAT_MAX_RESPONSE_BYTES", "1000000"
+            max_response_bytes=_positive_int("CHAT_MAX_RESPONSE_BYTES", "1000000"),
+            organizer_retry_attempts=_positive_int(
+                "CHAT_ORGANIZER_RETRY_ATTEMPTS", "3"
+            ),
+            organizer_retry_backoff_seconds=_positive_float(
+                "CHAT_ORGANIZER_RETRY_BACKOFF_SECONDS", "0.1"
             ),
         )

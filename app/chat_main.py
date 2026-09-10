@@ -26,6 +26,10 @@ def create_app(settings: ChatSettings | None = None) -> FastAPI:
             quota_client = OrganizerQuotaClient(
                 resolved_settings.organizer_base_url,
                 http_client,
+                retry_attempts=resolved_settings.organizer_retry_attempts,
+                retry_backoff_seconds=(
+                    resolved_settings.organizer_retry_backoff_seconds
+                ),
             )
             codex_runner = CodexRunner(
                 executable=resolved_settings.codex_executable,

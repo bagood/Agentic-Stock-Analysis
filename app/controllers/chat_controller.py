@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from fastapi import HTTPException, status
 
 from app.errors import (
+    ChatPersistenceRejectedError,
     CodexExecutionError,
     CodexTimeoutError,
     InvalidChatMessageError,
@@ -58,14 +59,38 @@ class ChatController:
                 headers={"WWW-Authenticate": "Bearer"},
             ) from exc
         except QuotaConsumptionRejectedError as exc:
+            detail = {"code": "quota_exhausted"}
+            if exc.quota is not None:
+                detail.update(exc.quota.model_dump(mode="json"))
+            headers = {}
+            if exc.retry_after is not None:
+                headers["Retry-After"] = exc.retry_after
+            elif exc.quota is not None:
+                seconds = math.ceil(
+                    (exc.quota.resets_at - datetime.now(timezone.utc)).total_seconds()
+                )
+                if seconds > 0:
+                    headers["Retry-After"] = str(seconds)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail={"code": "quota_exhausted"},
+                detail=detail,
+                headers=headers,
+            ) from exc
+        except ChatPersistenceRejectedError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Organizer rejected the completed chat payload",
             ) from exc
         except QuotaServiceUnavailableError as exc:
+            detail: str | dict[str, str] = "Chat quota service is unavailable"
+            if exc.error_code == "CHAT_HISTORY_UNAVAILABLE":
+                detail = {
+                    "message": str(exc),
+                    "error_code": exc.error_code,
+                }
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Chat quota service is unavailable",
+                detail=detail,
             ) from exc
         except CodexTimeoutError as exc:
             raise HTTPException(

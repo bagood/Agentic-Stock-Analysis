@@ -29,7 +29,7 @@ async def chat(
     controller: ChatControllerDependency,
     authorization: AuthorizationHeader = None,
 ) -> ChatResponse:
-    """Return a buffered Codex response after consuming one quota unit."""
+    """Return a completed chat turn after atomic persistence and quota use."""
     return await controller.communicate(request.message, authorization)
 
 
