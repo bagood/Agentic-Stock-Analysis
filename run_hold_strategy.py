@@ -12,15 +12,15 @@ PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
 
 WINDOW_CONFIGS = {
-    "5-10": {
-        "instructions_path": "instructions/stock-hold-strategy-5-10-instructions.md",
+    "5": {
+        "instructions_path": "instructions/stock-hold-strategy-5-instructions.md",
         "rolling_window": "5dd",
-        "trading_window": "5–10 trading sessions",
+        "trading_window": "5 trading sessions",
     },
-    "10-20": {
-        "instructions_path": "instructions/stock-hold-strategy-10-20-instructions.md",
+    "10": {
+        "instructions_path": "instructions/stock-hold-strategy-10-instructions.md",
         "rolling_window": "10dd",
-        "trading_window": "10–20 trading sessions",
+        "trading_window": "10 trading sessions",
     },
 }
 
@@ -32,8 +32,8 @@ def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--forecast-window",
         choices=tuple(WINDOW_CONFIGS),
-        default="10-20",
-        help="hold-strategy horizon in trading days (default: 10-20)",
+        default="10",
+        help="forecast horizon in trading sessions (default: 10)",
     )
     return parser.parse_args(arguments)
 
@@ -54,7 +54,7 @@ def prepare_output_dir(output_dir: Path) -> Path:
     return output_dir
 
 
-def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
+def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         config = WINDOW_CONFIGS[forecast_window]

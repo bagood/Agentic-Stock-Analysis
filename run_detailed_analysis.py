@@ -12,15 +12,15 @@ PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
 
 FORECAST_CONFIGS = {
-    "5-10": {
-        "instructions_path": "instructions/stock-upside-analysis-5-10-instructions.md",
+    "5": {
+        "instructions_path": "instructions/stock-upside-analysis-5-instructions.md",
         "rolling_window": "5dd",
-        "prompt_horizon": "5–10 trading days",
+        "prompt_horizon": "5 trading sessions",
     },
-    "10-20": {
-        "instructions_path": "instructions/stock-upside-analysis-10-20-instructions.md",
+    "10": {
+        "instructions_path": "instructions/stock-upside-analysis-10-instructions.md",
         "rolling_window": "10dd",
-        "prompt_horizon": "10–20 trading days",
+        "prompt_horizon": "10 trading sessions",
     },
 }
 
@@ -33,8 +33,8 @@ def parse_args(arguments: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--forecast-window",
         choices=tuple(FORECAST_CONFIGS),
-        default="10-20",
-        help="forecast horizon in trading days (default: 10-20)",
+        default="10",
+        help="forecast horizon in trading sessions (default: 10)",
     )
     return parser.parse_args(arguments)
 
@@ -227,7 +227,7 @@ def combine_tickers(*ticker_groups: list[str]) -> list[str]:
     )
 
 
-def main(forecast_window: str = "10-20", timeout: float = 30.0) -> int:
+def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         forecast_config = FORECAST_CONFIGS[forecast_window]

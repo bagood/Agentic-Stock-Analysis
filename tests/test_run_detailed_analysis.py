@@ -240,11 +240,11 @@ class OutputDirectoryTests(unittest.TestCase):
 
 
 class ForecastArgumentTests(unittest.TestCase):
-    def test_defaults_to_ten_to_twenty(self) -> None:
-        self.assertEqual(parse_args([]).forecast_window, "10-20")
+    def test_defaults_to_ten_sessions(self) -> None:
+        self.assertEqual(parse_args([]).forecast_window, "10")
 
     def test_accepts_each_supported_forecast_window(self) -> None:
-        for forecast_window in ("5-10", "10-20"):
+        for forecast_window in ("5", "10"):
             with self.subTest(forecast_window=forecast_window):
                 arguments = parse_args(
                     ["--forecast-window", forecast_window]
@@ -259,23 +259,23 @@ class ForecastArgumentTests(unittest.TestCase):
 
     def test_each_window_has_distinct_complete_configuration(self) -> None:
         self.assertEqual(
-            FORECAST_CONFIGS["5-10"],
+            FORECAST_CONFIGS["5"],
             {
                 "instructions_path": (
-                    "instructions/stock-upside-analysis-5-10-instructions.md"
+                    "instructions/stock-upside-analysis-5-instructions.md"
                 ),
                 "rolling_window": "5dd",
-                "prompt_horizon": "5–10 trading days",
+                "prompt_horizon": "5 trading sessions",
             },
         )
         self.assertEqual(
-            FORECAST_CONFIGS["10-20"],
+            FORECAST_CONFIGS["10"],
             {
                 "instructions_path": (
-                    "instructions/stock-upside-analysis-10-20-instructions.md"
+                    "instructions/stock-upside-analysis-10-instructions.md"
                 ),
                 "rolling_window": "10dd",
-                "prompt_horizon": "10–20 trading days",
+                "prompt_horizon": "10 trading sessions",
             },
         )
 
@@ -291,16 +291,16 @@ class ForecastArgumentTests(unittest.TestCase):
     def test_main_applies_the_selected_configuration_end_to_end(self) -> None:
         for forecast_window, rolling_window, instruction_name, horizon in (
             (
-                "5-10",
+                "5",
                 "5dd",
-                "stock-upside-analysis-5-10-instructions.md",
-                "5–10 trading days",
+                "stock-upside-analysis-5-instructions.md",
+                "5 trading sessions",
             ),
             (
-                "10-20",
+                "10",
                 "10dd",
-                "stock-upside-analysis-10-20-instructions.md",
-                "10–20 trading days",
+                "stock-upside-analysis-10-instructions.md",
+                "10 trading sessions",
             ),
         ):
             with self.subTest(forecast_window=forecast_window), patch.dict(
