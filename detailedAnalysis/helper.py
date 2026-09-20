@@ -51,7 +51,7 @@ def build_api_url(
     """Build an API URL from a configured base URL and endpoint path."""
     parsed = urllib.parse.urlsplit(base_url.strip())
     if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-        raise ValueError("BASE_URL must be an absolute HTTP or HTTPS URL")
+        raise ValueError("Base URL must be an absolute HTTP or HTTPS URL")
 
     base_path = parsed.path.rstrip("/")
     endpoint_path = path.strip("/")

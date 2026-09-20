@@ -5,14 +5,10 @@ from mcp.types import ToolAnnotations
 from starlette.applications import Starlette
 
 from app.models.analysis import AnalysisReport, TickerList
-from app.models.portfolio import Portfolio, PortfolioMutation
 from app.repositories.analysis_repository import AnalysisRepository
-from app.repositories.portfolio_repository import PortfolioRepository
 from app.services.analysis_service import AnalysisService
-from app.services.portfolio_service import PortfolioService
 
 _service = AnalysisService(AnalysisRepository())
-_portfolio_service = PortfolioService(PortfolioRepository())
 
 _read_only_annotations = ToolAnnotations(
     readOnlyHint=True,
@@ -21,36 +17,18 @@ _read_only_annotations = ToolAnnotations(
     openWorldHint=False,
 )
 
-_write_annotations = ToolAnnotations(
-    readOnlyHint=False,
-    destructiveHint=False,
-    idempotentHint=False,
-    openWorldHint=False,
-)
-
-_update_annotations = ToolAnnotations(
-    readOnlyHint=False,
-    destructiveHint=True,
-    idempotentHint=True,
-    openWorldHint=False,
-)
-
 mcp_server = MCPServer(
     name="agentic-stock-analysis",
     title="Agentic Stock Analysis",
-    description=(
-        "Read generated stock-analysis reports and manage a CSV-backed ticker portfolio."
-    ),
+    description="Read generated stock-analysis reports.",
     instructions=(
         "Use list_analysis_tickers with the requested rolling_window to discover "
         "available reports, then use "
         "get_analysis_report with one of those ticker symbols and the requested "
         "rolling_window: use 5dd for a 5-10 trading-day recommendation and 10dd "
-        "for a 10-20 trading-day recommendation. Use list_portfolio "
-        "before adding, modifying, or deleting CSV-backed portfolio positions. "
-        "Portfolio mutations require a rolling_window of 5dd or 10dd."
+        "for a 10-20 trading-day recommendation."
     ),
-    version="1.3.0",
+    version="2.0.0",
 )
 
 
@@ -85,34 +63,6 @@ def get_analysis_report(
         )
 
     return report
-
-
-@mcp_server.tool(structured_output=True, annotations=_read_only_annotations)
-def list_portfolio() -> Portfolio:
-    """List every ticker, price, and rolling window in the portfolio."""
-    return _portfolio_service.list_positions()
-
-
-@mcp_server.tool(structured_output=True, annotations=_write_annotations)
-def add_portfolio_ticker(
-    ticker: str, price: float, rolling_window: str
-) -> PortfolioMutation:
-    """Add a ticker for rolling window 5dd or 10dd to the portfolio."""
-    return _portfolio_service.add(ticker, price, rolling_window)
-
-
-@mcp_server.tool(structured_output=True, annotations=_update_annotations)
-def modify_portfolio_ticker(
-    ticker: str, price: float, rolling_window: str
-) -> PortfolioMutation:
-    """Replace the price of a ticker in the specified rolling window."""
-    return _portfolio_service.update(ticker, price, rolling_window)
-
-
-@mcp_server.tool(structured_output=True, annotations=_update_annotations)
-def delete_portfolio_ticker(ticker: str, rolling_window: str) -> PortfolioMutation:
-    """Delete a ticker from the specified rolling window."""
-    return _portfolio_service.delete(ticker, rolling_window)
 
 
 mcp_http_app: Starlette = mcp_server.streamable_http_app(

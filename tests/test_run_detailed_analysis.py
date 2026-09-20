@@ -1,19 +1,20 @@
-import csv
 import os
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import call, patch
 
 import run_detailed_analysis as runner
 
 from run_detailed_analysis import (
     FORECAST_CONFIGS,
     combine_tickers,
-    load_portfolio_tickers,
     parse_args,
+    parse_scored_recommendations,
     prepare_output_dir,
     select_positive_tickers,
+    select_stock_tickers,
+    select_window_recommendations,
 )
 
 
@@ -96,53 +97,118 @@ class SelectPositiveTickersTests(unittest.TestCase):
 
         self.assertEqual(selected, ["MDIA", "OASA", "BULL", "INDY"])
 
-
-class PortfolioTickerTests(unittest.TestCase):
-    def test_loads_normalized_portfolio_tickers(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            csv_path = Path(temporary_directory) / "portfolio.csv"
-            with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerows(
-                    [
-                        ["ticker", "price", "rolling_window"],
-                        ["bbca", "9250", "5dd"],
-                        [" TLKM ", "3000", "10dd"],
-                        ["asii", "5100", "5dd"],
-                    ]
+    def test_caps_qualifying_recommendations_at_four(self) -> None:
+        payload = {
+            "recommendations": [
+                {"ticker": ticker, "score": score}
+                for ticker, score in (
+                    ("FIVE", 0.5),
+                    ("ONE", 0.9),
+                    ("THREE", 0.7),
+                    ("TWO", 0.8),
+                    ("FOUR", 0.6),
                 )
+            ]
+        }
 
-            self.assertEqual(
-                load_portfolio_tickers("5dd", csv_path), ["BBCA", "ASII"]
-            )
-            self.assertEqual(
-                load_portfolio_tickers("10dd", csv_path), ["TLKM"]
-            )
+        self.assertEqual(
+            select_positive_tickers(payload, minimum_score=0.1),
+            ["ONE", "TWO", "THREE", "FOUR"],
+        )
 
-    def test_missing_portfolio_file_is_treated_as_empty(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            csv_path = Path(temporary_directory) / "missing.csv"
-            self.assertEqual(load_portfolio_tickers("5dd", csv_path), [])
+    def test_normalizes_duplicates_and_keeps_the_highest_score(self) -> None:
+        payload = {
+            "recommendations": [
+                {"ticker": " kota ", "score": 0.47},
+                {"ticker": "KOTA", "score": 0.52},
+            ]
+        }
 
-    def test_rejects_invalid_portfolio_rolling_window(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            csv_path = Path(temporary_directory) / "portfolio.csv"
-            with csv_path.open("w", newline="", encoding="utf-8") as csv_file:
-                writer = csv.writer(csv_file)
-                writer.writerows(
-                    [
-                        ["ticker", "price", "rolling_window"],
-                        ["BBCA", "9250", "7dd"],
+        self.assertEqual(parse_scored_recommendations(payload), [("KOTA", 0.52)])
+
+
+class SelectWindowRecommendationsTests(unittest.TestCase):
+    def test_assigns_duplicate_to_higher_score_and_replenishes_loser(self) -> None:
+        selected = select_window_recommendations(
+            {
+                "5dd": {
+                    "recommendations": [
+                        {"ticker": "KOTA", "score": 0.47},
+                        {"ticker": "AAAA", "score": 0.45},
+                        {"ticker": "BBBB", "score": 0.42},
+                        {"ticker": "CCCC", "score": 0.40},
+                        {"ticker": "DDDD", "score": 0.38},
                     ]
-                )
+                },
+                "10dd": {
+                    "recommendations": [
+                        {"ticker": " kota ", "score": 0.60},
+                        {"ticker": "EEEE", "score": 0.55},
+                        {"ticker": "FFFF", "score": 0.50},
+                        {"ticker": "GGGG", "score": 0.48},
+                        {"ticker": "HHHH", "score": 0.44},
+                    ]
+                },
+            },
+            minimum_score=0.5,
+        )
 
-            with self.assertRaisesRegex(ValueError, "invalid rolling_window"):
-                load_portfolio_tickers("5dd", csv_path)
+        self.assertEqual(selected["5dd"], ["AAAA", "BBBB", "CCCC", "DDDD"])
+        self.assertEqual(selected["10dd"], ["KOTA", "EEEE", "FFFF", "GGGG"])
+        self.assertTrue(set(selected["5dd"]).isdisjoint(selected["10dd"]))
 
-    def test_rejects_unsupported_requested_rolling_window(self) -> None:
-        with self.assertRaisesRegex(ValueError, "either 5dd or 10dd"):
-            load_portfolio_tickers("7dd")
+    def test_higher_five_day_score_wins_and_equal_scores_go_to_ten_day(self) -> None:
+        selected = select_window_recommendations(
+            {
+                "5dd": {
+                    "recommendations": [
+                        {"ticker": "FIVE", "score": 0.8},
+                        {"ticker": "TIE", "score": 0.7},
+                    ]
+                },
+                "10dd": {
+                    "recommendations": [
+                        {"ticker": "FIVE", "score": 0.6},
+                        {"ticker": "TIE", "score": 0.7},
+                    ]
+                },
+            },
+            minimum_score=0.5,
+        )
 
+        self.assertEqual(selected, {"5dd": ["FIVE"], "10dd": ["TIE"]})
+
+
+class SelectStockTickersTests(unittest.TestCase):
+    def test_accepts_stocks_object_and_deduplicates_tickers(self) -> None:
+        selected = select_stock_tickers(
+            {
+                "stocks": [
+                    {"ticker": "indy", "trading_window": "10dd"},
+                    {"ticker": "BBCA"},
+                    {"ticker": "INDY"},
+                ]
+            },
+            "10dd",
+        )
+
+        self.assertEqual(selected, ["INDY", "BBCA"])
+
+    def test_accepts_ticker_string_array(self) -> None:
+        self.assertEqual(
+            select_stock_tickers(["BNBR"], "10dd"),
+            ["BNBR"],
+        )
+
+    def test_rejects_mismatched_trading_window(self) -> None:
+        with self.assertRaisesRegex(ValueError, "expected 5dd"):
+            select_stock_tickers(
+                [{"ticker": "BBCA", "trading_window": "10dd"}],
+                "5dd",
+            )
+
+
+class CombineTickerTests(unittest.TestCase):
     def test_combines_sources_and_deduplicates_in_source_order(self) -> None:
         combined = combine_tickers(
             ["MDIA", "BBCA", "TLKM"],
@@ -155,7 +221,7 @@ class PortfolioTickerTests(unittest.TestCase):
 class OutputDirectoryTests(unittest.TestCase):
     def test_clears_only_the_selected_rolling_window_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
-            output_root = Path(temporary_directory) / "analysisResults"
+            output_root = Path(temporary_directory) / "detailedAnalysisResults"
             selected_dir = output_root / "10dd"
             other_dir = output_root / "5dd"
             selected_dir.mkdir(parents=True)
@@ -240,24 +306,25 @@ class ForecastArgumentTests(unittest.TestCase):
             with self.subTest(forecast_window=forecast_window), patch.dict(
                 os.environ,
                 {
-                    "BASE_URL": "https://data.example.test/",
-                    "OUTPUT_DIR": "unused-in-test",
+                    "ML_BASE_URL": "https://data.example.test/",
+                    "ORGANIZER_BASE_URL": "http://localhost:8000",
+                    "DETAILED_ANALYSIS_RESULT": "unused-in-test",
                     "MINIMUM_SCORE": "0.5",
                 },
                 clear=False,
             ), patch.object(runner, "load_env"), patch.object(
                 runner,
                 "prepare_output_dir",
-                return_value=Path(f"/tmp/analysisResults/{rolling_window}"),
+                return_value=Path(f"/tmp/detailedAnalysisResults/{rolling_window}"),
             ) as prepare_output, patch.object(
                 runner,
                 "fetch_json",
-                return_value={
-                    "recommendations": [{"ticker": "BBCA", "score": 0.9}]
-                },
+                side_effect=[
+                    {"recommendations": [{"ticker": "BBCA", "score": 0.9}]},
+                    {"recommendations": [{"ticker": "BMRI", "score": 0.8}]},
+                    {"stocks": [{"ticker": "TLKM"}]},
+                ],
             ) as fetch_json, patch.object(
-                runner, "load_portfolio_tickers", return_value=[]
-            ) as load_portfolio, patch.object(
                 runner, "run_detailed_analysis", return_value=0
             ) as analyze:
                 result = runner.main(forecast_window, timeout=12.0)
@@ -266,19 +333,44 @@ class ForecastArgumentTests(unittest.TestCase):
                 prepare_output.assert_called_once_with(
                     f"unused-in-test/{rolling_window}"
                 )
-                fetch_json.assert_called_once_with(
-                    "https://data.example.test/analytics/"
-                    f"daily_recommendations?rolling_window={rolling_window}",
-                    12.0,
+                self.assertEqual(
+                    fetch_json.call_args_list,
+                    [
+                        call(
+                            "https://data.example.test/analytics/"
+                            "daily_recommendations?rolling_window="
+                            "5dd",
+                            12.0,
+                        ),
+                        call(
+                            "https://data.example.test/analytics/"
+                            "daily_recommendations?rolling_window="
+                            "10dd",
+                            12.0,
+                        ),
+                        call(
+                            "http://localhost:8000/stocks?trading_window="
+                            f"{rolling_window}",
+                            12.0,
+                        ),
+                    ],
                 )
-                load_portfolio.assert_called_once_with(rolling_window)
-                analyze.assert_called_once_with(
-                    "BBCA",
-                    f"instructions/{instruction_name}",
-                    horizon,
-                    "https://data.example.test/",
-                    f"/tmp/analysisResults/{rolling_window}",
-                    12.0,
+                self.assertEqual(
+                    analyze.call_args_list,
+                    [
+                        call(
+                            ticker,
+                            f"instructions/{instruction_name}",
+                            horizon,
+                            "https://data.example.test/",
+                            f"/tmp/detailedAnalysisResults/{rolling_window}",
+                            12.0,
+                        )
+                        for ticker in (
+                            "BBCA" if rolling_window == "5dd" else "BMRI",
+                            "TLKM",
+                        )
+                    ],
                 )
 
 
