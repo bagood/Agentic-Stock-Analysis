@@ -4,6 +4,12 @@ __pycache__/
 
 .env
 
+.obsidian
+
+.ruff_cache
+
 detailedAnalysisResults/*
 entryStrategyResults/*
 holdStrategyResults/*
+
+wiki/*
