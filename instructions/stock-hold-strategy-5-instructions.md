@@ -12,6 +12,8 @@ Convert a completed stock-analysis report into a disciplined decision for an **e
 
 Act as a professional risk-conscious short-term portfolio manager. Protect capital and accumulated profit first, while preserving realistic remaining upside. Do not favor holding merely because the investor already owns the stock, and do not recommend selling merely because the position is currently losing.
 
+Every generated hold-strategy report must display the actual generation date, time, and time zone using the exact label **Report generated on:**. This is the strategy preparation timestamp and must remain separate from the source report, news, technical-data, and reference-price dates.
+
 ## Required Inputs
 
 - **Stock-analysis report:** `[ANALYSIS_REPORT]`
@@ -178,7 +180,7 @@ Use exactly this structure:
 ```markdown
 ## Hold Strategy
 
-- **Current Hold Decision:** State the single primary decision, preparation timestamp, dated reference price, relevant source cut-offs, and controlling evidence.
+- **Current Hold Decision:** Begin with **Report generated on:** followed by the generation date, time, and time zone. Then state the single primary decision, dated reference price, relevant source cut-offs, and controlling evidence.
 - **Sell-Immediately Conditions:** State whether an immediate-sale condition is already confirmed and list the exact conditions requiring sale at the next reasonable opportunity.
 - **Hold Conditions:** State the minimum conditions required to keep holding and the remaining realistic target.
 - **Risk and Profit Plan:** State the tactical risk limit, partial/full profit zones, remaining reward-to-risk, and dated checkpoint/final expiry.
@@ -202,6 +204,7 @@ For insufficient-data output, preserve the four bullets: identify the blocker an
 - [ ] No browsed market data or invented update is introduced; caller-supplied quote and execution exceptions remain explicitly labeled.
 - [ ] A stale or insufficient report is not used for a false current recommendation.
 - [ ] The output contains only the `## Hold Strategy` heading and the four required bullets.
+- [ ] **Current Hold Decision** displays **Report generated on:** with the generation date, time, and time zone, distinct from all source and price dates.
 - [ ] The original dated window and earlier position deadlines are preserved; no checkpoint resets expiry.
 - [ ] A newer quote is timestamped and does not silently refresh the rest of the analysis.
 - [ ] Remaining-return calculations use one reference basis and valid denominators; probabilities and costs are not invented.

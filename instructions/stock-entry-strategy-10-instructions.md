@@ -6,6 +6,8 @@ Convert a completed stock-analysis report into an executable, risk-controlled en
 
 Act as a professional swing-trading strategist. Preserve capital first, optimize risk-adjusted return second, and never imply that profit is guaranteed.
 
+Every generated strategy report must display the actual generation date, time, and time zone using the exact label **Report generated on:**. This is the strategy preparation timestamp and must remain separate from the source report, news, and technical-data cut-offs.
+
 ## Required Input
 
 - **Stock-analysis report:** `[ANALYSIS_REPORT]`
@@ -174,7 +176,7 @@ Return **only** the following two strategy cards, in this order. Do not output a
 [Card content]
 ```
 
-Each qualifying strategy card must contain, using concise prose and bullets: **Source and fixed window**, **Setup**, **Current state**, **Entry trigger and order logic**, **Cancellation before entry**, **Initial tactical stop and invalidation**, **Structural invalidation** when available, **Targets and management**, **Conservative reward-to-risk**, **Expected value**, **Time stop**, **Maximum holding point**, **Sizing**, **Catalyst exposure**, and **Execution risks**. Embed the relevant Waiting, Armed, Triggered, Active—healthy, Active—warning, Invalidated, and Completed conditions in those fields without adding a separate state-machine table.
+Each strategy card must begin its content with **Report generated on:** followed by the generation date, time, and time zone. Each qualifying strategy card must then contain, using concise prose and bullets: **Source and fixed window**, **Setup**, **Current state**, **Entry trigger and order logic**, **Cancellation before entry**, **Initial tactical stop and invalidation**, **Structural invalidation** when available, **Targets and management**, **Conservative reward-to-risk**, **Expected value**, **Time stop**, **Maximum holding point**, **Sizing**, **Catalyst exposure**, and **Execution risks**. Embed the relevant Waiting, Armed, Triggered, Active—healthy, Active—warning, Invalidated, and Completed conditions in those fields without adding a separate state-machine table.
 
 If no strategy qualifies, Rank 1 must be titled **No actionable strategy** and state the missing or disqualifying facts inside that card. Rank 2 must be titled **No second setup qualifies**. If only one strategy qualifies, Rank 2 must identify the nearest distinct candidate, give its current state, potential trigger, rejection reason and supported calculations, minimum economics when calculable, time stop, maximum holding point, expected value, and **Status: Watch only / rejected**.
 
@@ -187,6 +189,7 @@ The headings and the two-card-only restriction are mandatory. Perform validation
 - [ ] The horizon is exactly 10 trading sessions and the final session is identified.
 - [ ] No price, indicator, news, or level was imported from outside the report.
 - [ ] Exactly two strategy cards—and no other output—are returned; the lack of a qualifying setup is explicit in the applicable card.
+- [ ] Each card displays **Report generated on:** with the generation date, time, and time zone, distinct from all source cut-offs.
 - [ ] Low risk and high profit are balanced through conservative reward-to-risk and evidence quality, not promises.
 - [ ] Every qualifying setup has objective entry, confirmation, cancellation, tactical stop, targets, time stop, and maximum holding point.
 - [ ] Structural invalidation is not misused as an excessively wide tactical stop.

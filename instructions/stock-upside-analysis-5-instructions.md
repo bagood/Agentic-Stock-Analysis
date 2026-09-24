@@ -6,6 +6,21 @@ Analyze the short-term upside potential of a selected stock over the next **5 tr
 
 Act as a **professional financial analyst and risk-conscious short-term market strategist**. The analysis must be evidence-based, current as of the analysis date, transparent about uncertainty, and suitable for supporting an investment decision. Do not exaggerate confidence or guarantee returns.
 
+### Output Formatting
+
+- Begin the report with **Report generated on:** followed by the actual generation date, time, and time zone. Keep this generation timestamp separate from the analysis timestamp, news research cut-off, and supplied technical-data cut-off.
+- Do not present any part of the analysis as a Markdown table, HTML table, ASCII table, grid, or other tabular layout.
+- Present structured information as vertically stacked `Label: Value` lines. Use a short heading for each repeated item, followed by one field per line.
+- Use ordinary bullet points only for narrative lists that do not require label–value pairs.
+- Apply this format to all schedules, technical signals, catalysts, scenarios, risks, calculations, comparisons, and summary information.
+- Example:
+
+  **Item 1**
+
+  **Information 1:** Value 1
+
+  **Information 2:** Value 2
+
 ---
 
 ## Required Inputs
@@ -273,11 +288,37 @@ Do not infer sentiment from a few selected posts. Treat social media as suppleme
 
 Create three mutually exclusive, collectively exhaustive scenarios for the closing price at the end of session 5. Distinguish these terminal outcomes from intrawindow highs, target-touch opportunities, and stop-trigger events. An early target touch does not establish the terminal return.
 
-| Scenario | Required content |
-| --- | --- |
-| **Bull case** | Catalysts and market conditions required, price target or range, percentage return, and estimated probability |
-| **Base case** | Most likely path, price target or range, percentage return, and estimated probability |
-| **Bear case** | Failure conditions, downside target or range, percentage return, and estimated probability |
+Present each scenario as a separate labeled block, not as a table:
+
+**Bull case**
+
+**Required conditions:** Catalysts and market conditions required
+
+**Price target or range:** Value
+
+**Percentage return:** Value
+
+**Estimated probability:** Value
+
+**Base case**
+
+**Most likely path:** Description
+
+**Price target or range:** Value
+
+**Percentage return:** Value
+
+**Estimated probability:** Value
+
+**Bear case**
+
+**Failure conditions:** Description
+
+**Downside target or range:** Value
+
+**Percentage return:** Value
+
+**Estimated probability:** Value
 
 Requirements:
 
@@ -357,7 +398,7 @@ Revise the conclusion if bearish evidence or data-quality problems outweigh the 
 
 Present the analysis in this order:
 
-1. **Analysis timestamp, exact 5-session schedule, news cut-off, and supplied data cut-off**
+1. **Report generation date and time, analysis timestamp, exact 5-session schedule, news cut-off, and supplied data cut-off**
 2. **Input validation and data-freshness assessment**
 3. **Supplied OHLCV and technical snapshot**
 4. **Key company news and catalysts**
@@ -366,11 +407,11 @@ Present the analysis in this order:
 7. **Integrated technical-and-news assessment**
 8. **Near-term catalyst calendar**
 9. **Bull, base, and bear scenarios**
-10. **Risk matrix, risk controls, and horizon-specific review checkpoints**
+10. **Risk assessment, risk controls, and horizon-specific review checkpoints**
 11. **Final assessment**
 12. **News and official calendar sources**
 
-Use tables when comparing technical signals, scenarios, catalysts, or risks. Keep provided data, reported news, calculations, and analyst judgment visibly separate. Cite technical figures as **Provided technical dataset**, not as internet sources.
+Do not use tables anywhere in the report. For comparisons, give each technical signal, scenario, catalyst, or risk its own labeled block and put each attribute on a separate `Label: Value` line. Keep provided data, reported news, calculations, and analyst judgment visibly separate. Cite technical figures as **Provided technical dataset**, not as internet sources.
 
 ---
 
@@ -397,6 +438,7 @@ After these bullets, include:
 Do not finalize the report until all applicable items are satisfied:
 
 - [ ] The current date, time zone, forecast window, news cut-off, and supplied technical-data cut-off are stated.
+- [ ] The report begins with **Report generated on:** and shows the actual generation date, time, and time zone separately from all analysis and data cut-offs.
 - [ ] Exactly 5 future exchange sessions are listed; partial sessions, closures, catalyst timing, and expiry are handled consistently.
 - [ ] The JSON was parsed, sorted by `Date`, and validated.
 - [ ] The latest supplied `Close` and `Date` are stated.
@@ -408,6 +450,7 @@ Do not finalize the report until all applicable items are satisfied:
 - [ ] Both Bahasa Indonesia and English sources were considered where relevant.
 - [ ] Relevant Indonesian and global news was analyzed.
 - [ ] Company catalysts within the forecast window were checked.
+- [ ] No Markdown, HTML, ASCII, grid, or other tables were used; structured information is shown as labeled `Label: Value` lines.
 - [ ] All relevant supplied technical, momentum, volume, volatility, flow, and positioning fields were considered.
 - [ ] Technical figures are attributed to the provided dataset.
 - [ ] Bull, base, and bear scenarios refer to the session-5 close; numerical targets and probabilities are supplied only when defensible.
