@@ -35,16 +35,25 @@ Before beginning, identify:
 - **Optional entry price:** `[PRICE, CURRENCY, AND WHETHER PROPOSED OR ALREADY EXECUTED]`
 - **Optional risk tolerance:** `[CONSERVATIVE / MODERATE / AGGRESSIVE]`
 - **Required technical and OHLCV data:** `[TECHNICAL_DATA_JSON]`
-- **Data metadata, when available:** Bar interval, exchange time zone, completed/provisional status, price-adjustment basis, volume units, and indicator definitions.
+- **Optional data metadata, when available:** Bar interval, exchange time zone, completed/provisional status, price-adjustment basis, volume units, and indicator definitions.
 
-Use exactly **5 trading sessions**, not calendar days or a range. State assumptions for missing optional inputs. Missing or stale required data permits only a non-actionable diagnostic.
+Use exactly **5 trading sessions**, not calendar days or a range. State assumptions for missing optional inputs.
+
+### Trusted Technical-Data Contract
+
+- Treat the caller-supplied technical payload as authoritative, valid, and ready for analysis. The caller has already validated the data upstream.
+- Treat the supplied dated record as a completed daily IDX regular-session bar for the immediately preceding completed trading session. The analysis must use this previous-session data, not a partial or current-session bar.
+- Do not withhold actionability because interval, completion status, exchange time zone, adjustment basis, volume units, indicator definitions, or other metadata are absent.
+- Accept either a JSON array of records or an unambiguous date-keyed JSON object. Normalize the shape conceptually without treating the difference as a validation failure.
+- One supplied record is sufficient when it contains derived historical indicators. Analyze those supplied indicators as computed features, while avoiding calculations that genuinely require unavailable raw observations.
+- Missing optional fields, null optional fields, limited raw history, an unverified calendar, or incomplete news coverage must be disclosed as limitations but must not trigger an **Insufficient/Stale Data** result or suppress the best-supported forecast.
 
 ### Trading-Session Convention
 
 - One trading session means one exchange trading date, including all intraday segments. A morning and afternoon segment count as one session together.
 - Session 1 is the first exchange trading date whose regular opening is after the analysis timestamp. Before the open, today may be session 1; during or after trading, start with the next trading date. Do not count a partially elapsed session as a full future session.
 - List every session date from session 1 through session 5, with the exchange time zone. The forecast ends at the regular close of session 5. Exclude weekends and official closures; use the selected exchange's calendar, with IDX applicable to Indonesian listings.
-- Verify dates using an official exchange calendar or caller-supplied official schedule. Official calendars and trading-status notices are the narrow exception to the news-only browsing rule; they must not supply market prices or technical data. If dates cannot be verified, label the schedule provisional and withhold an actionable forecast.
+- Verify dates using an official exchange calendar or caller-supplied official schedule when practical. Official calendars and trading-status notices are the narrow exception to the news-only browsing rule; they must not supply market prices or technical data. If dates cannot be independently verified, label the schedule provisional and continue with the actionable analysis using the normal IDX weekday schedule and known official holidays.
 - Count exchange sessions even if this particular stock is suspended; disclose non-tradability and do not extend the horizon silently. Rebuild the dated schedule if an unexpected exchange closure occurs.
 - Keep historical indicator lookbacks separate from the forecast horizon. Fields such as `Price Momentum 5D`, `10D`, and `20D` retain their supplied names and definitions.
 
@@ -80,7 +89,7 @@ The actual records may include all supplied derived fields, including Aroon, dir
 Apply these input rules:
 
 - Treat the JSON as the **only authorized source** for OHLCV, price, volume, technical indicators, technical positioning, and supplied foreign/domestic flow features.
-- Do not assume the records are sorted. Parse `Date`, sort ascending, and use the most recent valid completed daily bar as the technical data cut-off. If the interval or completion status is uncertain, disclose this and withhold actionability until resolved.
+- Do not assume multiple records are sorted. Parse `Date`, sort ascending, and use the most recent supplied record as the technical data cut-off. Under the Trusted Technical-Data Contract, treat it as the completed daily bar for the immediately preceding completed trading session.
 - Use the latest valid completed daily bar’s `Close` as the market reference price. Show a caller-provided entry price separately as the trade-return basis; never describe it as the current quote.
 - Interpret binary indicator fields as `1 = condition active` and `0 = condition inactive`, unless the caller provides another definition.
 - Interpret continuous fields according to their names and supplied values. If a field’s meaning or scale is ambiguous, disclose the ambiguity instead of inventing a formula.
@@ -90,7 +99,7 @@ Apply these input rules:
 - Do not calculate an indicator that requires unavailable historical observations. If only one record is supplied, analyze its existing derived fields but do not pretend that a full price history was provided.
 - Do not infer exact support, resistance, ATR-based stops, moving averages, or volatility values unless the supplied JSON contains enough raw observations or the required numeric fields.
 - Reject future-dated or impossible-date records. Exclude explicitly provisional bars from completed-session calculations and disclose their presence. Resolve conflicting duplicate dates with the caller; do not select an arbitrary row.
-- Compare the latest valid completed daily bar with the latest completed exchange session as of the analysis timestamp. Any lag makes the data stale and blocks actionable forecasts; there is no three-session grace period. State the lag in exchange sessions and request updated data. During an open session, the previous completed session is the freshness benchmark.
+- Confirm that the supplied bar represents the immediately preceding completed trading session relative to the analysis date, regardless of whether the analysis runs before, during, or after the current session. Do not use a partial or same-calendar-day bar. Under the Trusted Technical-Data Contract, assume this relationship is correct unless the payload explicitly says otherwise.
 - Identify adjustment inconsistencies, splits, and ex-dividend effects before comparing prices. Do not treat a mechanical corporate-action price change as trading profit or loss. If the basis cannot be reconciled from authorized inputs, withhold affected calculations.
 
 ---
@@ -146,7 +155,7 @@ The analysis must be up to date as of the stated analysis date and time.
 - Keep two cut-offs separate: the **news research cut-off** and the **supplied technical-data cut-off**.
 - Do not claim that the full analysis is current merely because the news is current. A current 5-session forecast also requires current supplied technical and OHLCV data.
 
-If current news research cannot be completed, the calendar is unverified, or required technical data is invalid, insufficient, or stale, provide a non-actionable diagnostic and identify what is needed to proceed. Do not issue entry instructions or an actionable rating. A completed search finding no material recent news is a valid finding, not automatically a research failure; document its scope and cut-off.
+If current news research cannot be completed or the calendar cannot be independently verified, disclose the limitation and continue with the best-supported analysis. Do not classify the report as insufficient solely for those reasons. A completed search finding no material recent news is a valid finding; document its scope and cut-off.
 
 ### 4. Source Quality and Verification
 
@@ -425,7 +434,7 @@ After the report sections and sources, provide the following three bullet points
 
 - **Summary of the Analysis:** Give a concise overall judgment—**Attractive**, **Conditionally Attractive**, **Neutral/Wait**, **Avoid**, or **Insufficient/Stale Data**—with the preferred entry or confirmation condition, profit-taking zone, risk limit, risk–reward ratio when defensible, and the two or three supplied technical or cited news items that matter most.
 
-For a diagnostic, retain these headings, use **Insufficient/Stale Data**, and mark unsupported targets, probabilities, and execution levels unavailable. Do not invent values to fill the format.
+Use **Insufficient/Stale Data** only when the payload explicitly identifies the technical data as invalid, provisional, or older than the immediately preceding completed trading session. Missing optional metadata, a single supplied record, a date-keyed object, provisional calendar dates, or incomplete news coverage are not sufficient reasons for that classification. Mark only genuinely unsupported calculations unavailable; still provide the best-supported overall judgment and forecast without inventing values.
 
 After these bullets, include:
 
@@ -442,7 +451,7 @@ Do not finalize the report until all applicable items are satisfied:
 - [ ] Exactly 5 future exchange sessions are listed; partial sessions, closures, catalyst timing, and expiry are handled consistently.
 - [ ] The JSON was parsed, sorted by `Date`, and validated.
 - [ ] The latest supplied `Close` and `Date` are stated.
-- [ ] Any actionable forecast uses valid, sufficient data through the latest completed session; otherwise the report is explicitly non-actionable.
+- [ ] The supplied technical payload was treated as authoritative previous-session data under the Trusted Technical-Data Contract, and optional omissions were disclosed without automatically blocking actionability.
 - [ ] Internet research was restricted to news, official announcements, press releases, newsworthy disclosures, and official session-calendar/trading-status verification.
 - [ ] No internet-sourced OHLCV, price, volume, chart, technical indicator, support/resistance, market-flow dataset, or replacement technical value was used as a calculation input.
 - [ ] Material news claims have direct citations, publication dates, and event dates when different.
