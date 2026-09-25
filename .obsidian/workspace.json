@@ -1,0 +1,223 @@
+{
+  "main": {
+    "id": "bec349f279baef89",
+    "type": "split",
+    "children": [
+      {
+        "id": "14c26bed3ac6a330",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "10833fd7da25a27b",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "52164fd3e546debf",
+    "type": "split",
+    "children": [
+      {
+        "id": "6992fac2a4407f6d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "80b32fc8d8057578",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "bc5d3ab5739f8da0",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "ce0cb4580725bc0b",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "181431190191bcaa",
+    "type": "split",
+    "children": [
+      {
+        "id": "b957ffcae62839a6",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "05a7cacc7f3d9137",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "889cb66dae5786f5",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "92eb0ad5629dca59",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "211ab8ae61d999b9",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "0961a90fb623c161",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "10833fd7da25a27b",
+  "lastOpenFiles": [
+    "tests/test_run_hold_strategy.py",
+    "tests/test_run_entry_strategy.py",
+    "tests/test_organizer_quota_client.py",
+    "tests/test_mcp_server.py",
+    "tests/test_hold_strategy_service.py",
+    "tests/test_hold_strategy_api.py",
+    "tests/test_entry_strategy_service.py",
+    "tests/test_entry_strategy_api.py",
+    "tests/test_codex_runner.py",
+    "tests/test_chat_settings.py",
+    "tests/test_chat_service.py",
+    "instructions/stock-hold-strategy-5-10-instructions.md",
+    "instructions/stock-hold-strategy-10-20-instructions.md",
+    "instructions/stock-entry-strategy-5-10-instructions.md",
+    "instructions/stock-entry-strategy-10-20-instructions.md",
+    "wiki/stocks/YELO.md",
+    "CODEX.md",
+    "detailedAnalysisResults/5dd/YELO.md",
+    "entryStrategyResults/10dd/SSIA.md",
+    "wiki/dashboard.md",
+    "wiki/stocks/RMKE.md",
+    "wiki/log.md",
+    "wiki/themes/single-row-data-quality.md",
+    "wiki/themes/distribution-versus-oversold.md",
+    "wiki/themes/bank-indonesia-and-post-fed-risk.md",
+    "wiki/methodology/10-20-trading-sessions.md",
+    "wiki/methodology/5-10-trading-sessions.md",
+    "wiki/methodology/source-model.md",
+    "wiki/index.md",
+    "wiki/sources/entry-10dd-SSIA.md",
+    "wiki/sources/analysis-10dd-SSIA.md",
+    "wiki/stocks/SSIA.md",
+    "wiki/windows/10-20/SSIA.md",
+    "wiki/sources/entry-10dd-MEDC.md",
+    "wiki/sources/analysis-10dd-MEDC.md",
+    "wiki/stocks/MEDC.md"
+  ]
+}

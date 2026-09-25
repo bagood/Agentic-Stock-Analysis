@@ -3,6 +3,9 @@
 agentic-stock-analysis generates short-term stock-analysis reports and exposes
 the generated reports through a small FastAPI service.
 
+For the updated script commands, instruction-file renames, and upgrade steps,
+see the [5- and 10-session migration guide](docs/trading-session-migration.md).
+
 The analysis workflow:
 
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
@@ -84,22 +87,24 @@ Run the complete recommendation-based analysis once:
 docker compose run --rm agentic-stock-analysis
 ```
 
-The default forecast window is `10-20` trading days. Choose either supported
+The default mode is `10`, forecasting exactly **10 trading sessions**.
+The `5` mode forecasts exactly **5 trading sessions**. Choose either supported
 window explicitly with:
 
 ```bash
 docker compose run --rm agentic-stock-analysis \
-  python run_detailed_analysis.py --forecast-window 5-10
+  python run_detailed_analysis.py --forecast-window 5
 
 docker compose run --rm agentic-stock-analysis \
-  python run_detailed_analysis.py --forecast-window 10-20
+  python run_detailed_analysis.py --forecast-window 10
 ```
 
-The `5-10` mode uses
-`instructions/stock-upside-analysis-5-10-instructions.md` and requests the
-recommendation API's `5dd` rolling window. The `10-20` mode uses
-`instructions/stock-upside-analysis-10-20-instructions.md` and requests `10dd`.
-These are the only accepted forecast-window values. Technical and
+The `5` mode uses
+`instructions/stock-upside-analysis-5-instructions.md` and requests the
+recommendation API's `5dd` rolling window. The `10` mode uses
+`instructions/stock-upside-analysis-10-instructions.md` and requests `10dd`.
+The only accepted forecast-window values are `5` and `10`.
+Technical and
 recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
 
 This command retrieves the recommendation lists for both rolling windows and
@@ -127,14 +132,18 @@ The stocks endpoint may return a ticker-only JSON array such as `["BNBR"]`.
 
 ## Generate entry strategies with Docker
 
-Generate strategies from the analysis reports in the matching rolling window:
+Generate strategies from the analysis reports in the matching rolling window.
+Mode `5` uses exactly **5 trading sessions**; `10` uses exactly
+**10 trading sessions** (the default). Entry plans preserve the source report’s
+original dated expiry; generating a strategy does not restart the window.
+Refresh stale, expired, or old range-based analysis reports before using them:
 
 ```bash
 docker compose run --rm agentic-stock-analysis \
-  python run_entry_strategy.py --forecast-window 5-10
+  python run_entry_strategy.py --forecast-window 5
 
 docker compose run --rm agentic-stock-analysis \
-  python run_entry_strategy.py --forecast-window 10-20
+  python run_entry_strategy.py --forecast-window 10
 ```
 
 The runner reads every Markdown file from `detailedAnalysisResults/5dd/` or
@@ -144,6 +153,11 @@ and writes the result to `entryStrategyResults/5dd/` or
 entry-strategy window. Run detailed analysis first when no source reports exist.
 
 ## Generate hold strategies with Docker
+
+Hold mode `5` uses exactly **5 trading sessions**; `10` uses
+exactly **10 trading sessions** (the default). Plans retain the source report’s
+original dated expiry. Refresh stale, expired, or old range-based reports; a
+newer quote alone does not refresh the analysis.
 
 Hold-strategy tickers are retrieved from `GET /stocks` on
 `ORGANIZER_BASE_URL`, using
@@ -155,10 +169,10 @@ Use the existing analysis service and override its command:
 
 ```bash
 docker compose run --rm agentic-stock-analysis \
-  python run_hold_strategy.py --forecast-window 5-10
+  python run_hold_strategy.py --forecast-window 5
 
 docker compose run --rm agentic-stock-analysis \
-  python run_hold_strategy.py --forecast-window 10-20
+  python run_hold_strategy.py --forecast-window 10
 ```
 
 Results are written to `holdStrategyResults/5dd/` or
@@ -249,7 +263,7 @@ It provides these tools:
   tickers with generated reports in that directory.
 - `get_analysis_report` accepts required `ticker` and `rolling_window` arguments
   and returns the complete Markdown report from the matching directory. Use
-  `5dd` for 5-10 trading days and `10dd` for 10-20 trading days.
+  `5dd` for 5 trading sessions and `10dd` for 10 trading sessions.
 
 For example, add it to Codex CLI:
 

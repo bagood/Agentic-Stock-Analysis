@@ -38,29 +38,32 @@ class HoldStrategyHelperTests(unittest.TestCase):
     def test_prompt_includes_position_and_delimited_analysis(self) -> None:
         holding = Holding("BBCA", Decimal("9250"), "5dd")
         prompt = build_hold_strategy_prompt(
-            "Instructions", "# Analysis\nEvidence", holding, "5–10 sessions"
+            "Instructions", "# Analysis\nEvidence", holding, "5 trading sessions"
         )
 
         self.assertIn("Average acquisition price: IDR 9250", prompt)
         self.assertIn("Quantity: Not supplied", prompt)
+        self.assertIn("fixed 5 trading sessions window", prompt)
+        self.assertIn("original dated expiry", prompt)
+        self.assertIn("report insufficient data", prompt)
         self.assertIn("<ANALYSIS_REPORT>\n# Analysis\nEvidence", prompt)
         self.assertTrue(prompt.endswith("</ANALYSIS_REPORT>\n"))
 
     def test_prompt_marks_missing_average_price(self) -> None:
         holding = Holding("BBCA", None, "5dd")
         prompt = build_hold_strategy_prompt(
-            "Instructions", "Analysis", holding, "5–10 sessions"
+            "Instructions", "Analysis", holding, "5 trading sessions"
         )
 
         self.assertIn("Average acquisition price: Not supplied", prompt)
 
 
 class HoldStrategyArgumentTests(unittest.TestCase):
-    def test_defaults_to_ten_to_twenty(self) -> None:
-        self.assertEqual(parse_args([]).forecast_window, "10-20")
+    def test_defaults_to_ten_sessions(self) -> None:
+        self.assertEqual(parse_args([]).forecast_window, "10")
 
     def test_accepts_both_windows(self) -> None:
-        for window in ("5-10", "10-20"):
+        for window in ("5", "10"):
             self.assertEqual(
                 parse_args(["--forecast-window", window]).forecast_window,
                 window,
@@ -68,8 +71,10 @@ class HoldStrategyArgumentTests(unittest.TestCase):
 
     def test_configurations_reference_existing_instructions(self) -> None:
         project_dir = Path(__file__).resolve().parent.parent
-        self.assertEqual(WINDOW_CONFIGS["5-10"]["rolling_window"], "5dd")
-        self.assertEqual(WINDOW_CONFIGS["10-20"]["rolling_window"], "10dd")
+        self.assertEqual(WINDOW_CONFIGS["5"]["rolling_window"], "5dd")
+        self.assertEqual(WINDOW_CONFIGS["10"]["rolling_window"], "10dd")
+        self.assertEqual(WINDOW_CONFIGS["5"]["trading_window"], "5 trading sessions")
+        self.assertEqual(WINDOW_CONFIGS["10"]["trading_window"], "10 trading sessions")
         for config in WINDOW_CONFIGS.values():
             self.assertTrue((project_dir / config["instructions_path"]).is_file())
 
@@ -113,7 +118,7 @@ class HoldStrategyRunnerTests(unittest.TestCase):
             ) as fetch_json, patch.object(
                 runner, "generate_hold_strategy", return_value=0
             ) as generate:
-                result = runner.main("10-20", timeout=12.0)
+                result = runner.main("10", timeout=12.0)
 
             self.assertEqual(result, 0)
             fetch_json.assert_called_once_with(
@@ -124,8 +129,8 @@ class HoldStrategyRunnerTests(unittest.TestCase):
             generate.assert_called_once_with(
                 holding,
                 str(analysis_path),
-                "instructions/stock-hold-strategy-10-20-instructions.md",
-                "10–20 trading sessions",
+                "instructions/stock-hold-strategy-10-instructions.md",
+                "10 trading sessions",
                 str(output_root / "10dd"),
             )
 
@@ -148,7 +153,7 @@ class HoldStrategyRunnerTests(unittest.TestCase):
             ), patch.object(
                 runner, "generate_hold_strategy", return_value=1
             ):
-                self.assertEqual(runner.main("5-10"), 1)
+                self.assertEqual(runner.main("5"), 1)
 
 
 if __name__ == "__main__":

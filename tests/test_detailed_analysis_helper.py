@@ -47,7 +47,7 @@ class ApiUrlTests(unittest.TestCase):
 
 class PromptTests(unittest.TestCase):
     def test_uses_selected_trading_day_horizon(self) -> None:
-        for horizon in ("5–10 trading days", "10–20 trading days"):
+        for horizon in ("5 trading sessions", "10 trading sessions"):
             with self.subTest(horizon=horizon):
                 prompt = build_prompt("Instructions", "[]", "BBCA", horizon)
                 self.assertIn(f"over the next {horizon}", prompt)

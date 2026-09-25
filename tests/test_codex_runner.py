@@ -2,9 +2,47 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from app.errors import CodexExecutionError, CodexTimeoutError
-from app.integrations.codex_runner import CodexRunner
+from llm_runner.codex_runner import CodexRunner, run_codex
+
+
+class SynchronousCodexRunnerTests(unittest.TestCase):
+    @patch("llm_runner.codex_runner.subprocess.run")
+    def test_runs_read_only_and_writes_the_requested_output(self, run) -> None:
+        output_path = Path("reports/BBCA.md")
+        working_directory = Path("/project")
+
+        run_codex("prompt", output_path, working_directory)
+
+        run.assert_called_once_with(
+            [
+                "codex",
+                "exec",
+                "--sandbox",
+                "read-only",
+                "--skip-git-repo-check",
+                "-o",
+                str(output_path),
+                "-",
+            ],
+            input="prompt",
+            text=True,
+            cwd=working_directory,
+            check=True,
+        )
+
+    @patch("llm_runner.codex_runner.subprocess.run")
+    def test_can_enable_search(self, run) -> None:
+        run_codex(
+            "prompt",
+            Path("report.md"),
+            Path("/project"),
+            enable_search=True,
+        )
+
+        self.assertEqual(run.call_args.args[0][:3], ["codex", "--search", "exec"])
 
 
 class CodexRunnerTests(unittest.IsolatedAsyncioTestCase):

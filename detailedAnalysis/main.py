@@ -1,14 +1,15 @@
-import sys
 import json
-import subprocess
+import sys
 from pathlib import Path
 
+from app.errors import CodexExecutionError
 from detailedAnalysis.helper import (
     build_prompt,
     build_technical_url,
     fetch_json,
     normalize_ticker,
 )
+from llm_runner.codex_runner import run_codex
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
@@ -49,29 +50,18 @@ def main(
             forecast_horizon,
         )
 
-        subprocess.run(
-            [
-                "codex",
-                "--search",
-                "exec",
-                "--sandbox",
-                "read-only",
-                "--skip-git-repo-check",
-                "-o",
-                str(output_path),
-                "-",
-            ],
-            input=prompt,
-            text=True,
-            cwd=PROJECT_DIR,
-            check=True,
+        run_codex(
+            prompt,
+            output_path,
+            PROJECT_DIR,
+            enable_search=True,
         )
     except (
         KeyError,
         OSError,
         RuntimeError,
         ValueError,
-        subprocess.CalledProcessError,
+        CodexExecutionError,
     ) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1

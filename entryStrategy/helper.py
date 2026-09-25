@@ -25,7 +25,8 @@ def build_entry_strategy_prompt(
     normalized_ticker = normalize_ticker(ticker)
     request = (
         f"Generate entry strategies for IDX-listed {normalized_ticker} "
-        f"for the next {trading_window}. Use IDR and the risk tolerance stated "
+        f"within the source report’s fixed {trading_window} window, preserving "
+        "its original dated expiry. Use IDR and the risk tolerance stated "
         "in the analysis (or Moderate when absent). Follow every instruction "
         "above and use only the supplied analysis report."
     )

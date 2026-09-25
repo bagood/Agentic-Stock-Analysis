@@ -6,10 +6,10 @@ from fastapi import FastAPI
 
 from app.clients.organizer_quota_client import OrganizerQuotaClient
 from app.controllers.chat_controller import ChatController
-from app.integrations.codex_runner import CodexRunner
 from app.routers.chat_router import router as chat_router
 from app.services.chat_service import ChatService
 from app.settings import ChatSettings
+from llm_runner.codex_runner import CodexRunner
 
 
 def create_app(settings: ChatSettings | None = None) -> FastAPI:

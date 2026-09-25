@@ -30,20 +30,22 @@ class EntryStrategyHelperTests(unittest.TestCase):
 
     def test_builds_prompt_with_delimited_source_report(self) -> None:
         prompt = build_entry_strategy_prompt(
-            "Instructions", "# Analysis\nEvidence", "bbca", "5–10 sessions"
+            "Instructions", "# Analysis\nEvidence", "bbca", "5 trading sessions"
         )
 
         self.assertIn("IDX-listed BBCA", prompt)
+        self.assertIn("fixed 5 trading sessions window", prompt)
+        self.assertIn("original dated expiry", prompt)
         self.assertIn("<ANALYSIS_REPORT>\n# Analysis\nEvidence", prompt)
         self.assertTrue(prompt.endswith("</ANALYSIS_REPORT>\n"))
 
 
 class EntryStrategyArgumentTests(unittest.TestCase):
-    def test_defaults_to_ten_to_twenty(self) -> None:
-        self.assertEqual(parse_args([]).forecast_window, "10-20")
+    def test_defaults_to_ten_sessions(self) -> None:
+        self.assertEqual(parse_args([]).forecast_window, "10")
 
     def test_accepts_supported_windows(self) -> None:
-        for window in ("5-10", "10-20"):
+        for window in ("5", "10"):
             self.assertEqual(
                 parse_args(["--forecast-window", window]).forecast_window,
                 window,
@@ -51,8 +53,10 @@ class EntryStrategyArgumentTests(unittest.TestCase):
 
     def test_window_configuration_points_to_existing_instructions(self) -> None:
         project_dir = Path(__file__).resolve().parent.parent
-        self.assertEqual(WINDOW_CONFIGS["5-10"]["rolling_window"], "5dd")
-        self.assertEqual(WINDOW_CONFIGS["10-20"]["rolling_window"], "10dd")
+        self.assertEqual(WINDOW_CONFIGS["5"]["rolling_window"], "5dd")
+        self.assertEqual(WINDOW_CONFIGS["10"]["rolling_window"], "10dd")
+        self.assertEqual(WINDOW_CONFIGS["5"]["trading_window"], "5 trading sessions")
+        self.assertEqual(WINDOW_CONFIGS["10"]["trading_window"], "10 trading sessions")
         for config in WINDOW_CONFIGS.values():
             self.assertTrue((project_dir / config["instructions_path"]).is_file())
 
@@ -91,14 +95,14 @@ class EntryStrategyOutputTests(unittest.TestCase):
             ), patch.object(runner, "load_env"), patch.object(
                 runner, "generate_entry_strategy", return_value=0
             ) as generate:
-                result = runner.main("5-10")
+                result = runner.main("5")
 
             self.assertEqual(result, 0)
             generate.assert_called_once_with(
                 "BBCA",
                 str(report),
-                "instructions/stock-entry-strategy-5-10-instructions.md",
-                "5–10 trading sessions",
+                "instructions/stock-entry-strategy-5-instructions.md",
+                "5 trading sessions",
                 str(strategy_root / "5dd"),
             )
 
@@ -119,7 +123,7 @@ class EntryStrategyOutputTests(unittest.TestCase):
             ), patch.object(runner, "load_env"), patch.object(
                 runner, "generate_entry_strategy"
             ) as generate:
-                result = runner.main("10-20")
+                result = runner.main("10")
 
             self.assertEqual(result, 0)
             generate.assert_not_called()

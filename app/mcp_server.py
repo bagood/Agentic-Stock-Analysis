@@ -25,8 +25,8 @@ mcp_server = MCPServer(
         "Use list_analysis_tickers with the requested rolling_window to discover "
         "available reports, then use "
         "get_analysis_report with one of those ticker symbols and the requested "
-        "rolling_window: use 5dd for a 5-10 trading-day recommendation and 10dd "
-        "for a 10-20 trading-day recommendation."
+        "rolling_window: use 5dd for a 5-session recommendation and 10dd "
+        "for a 10-session recommendation."
     ),
     version="2.0.0",
 )
@@ -39,7 +39,7 @@ mcp_server = MCPServer(
 def list_analysis_tickers(
     rolling_window: Literal["5dd", "10dd"],
 ) -> TickerList:
-    """List report tickers from 5dd (5-10 days) or 10dd (10-20 days)."""
+    """List report tickers from 5dd (5 trading sessions) or 10dd (10 trading sessions)."""
     return _service.get_tickers(rolling_window)
 
 
@@ -51,7 +51,7 @@ def get_analysis_report(
     ticker: str,
     rolling_window: Literal["5dd", "10dd"],
 ) -> AnalysisReport:
-    """Return a report from 5dd (5-10 days) or 10dd (10-20 days)."""
+    """Return a report from 5dd (5 trading sessions) or 10dd (10 trading sessions)."""
     try:
         report = _service.get_report(ticker, rolling_window)
     except ValueError as exc:
