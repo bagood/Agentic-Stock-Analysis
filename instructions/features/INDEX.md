@@ -1,6 +1,6 @@
 # Technical feature index
 
-This index covers all 210 features in [catalog version 1.0](../../technical_feature_catalog_v1.json). Link labels and card headings preserve the exact payload field names, including capitalization.
+This index covers all 210 features in [catalog version 1.0](../technical_feature_catalog_v1.json). Link labels and card headings preserve the exact payload field names, including capitalization.
 
 Start with the [agent guide](README.md). Retrieve cards by exact field name, then follow related-feature links when needed. Grouping is for navigation; it does not change any feature definition.
 

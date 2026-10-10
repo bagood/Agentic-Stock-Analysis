@@ -4,7 +4,7 @@ Use this reference dataset to interpret supplied technical features alongside th
 
 ## Source and field selection
 
-The source is [technical_feature_catalog_v1.json](../../technical_feature_catalog_v1.json), version 1.0, with market timezone Asia/Jakarta. There is one feature card for each of its 210 features, including the five raw OHLCV definitions.
+The source is [technical_feature_catalog_v1.json](../technical_feature_catalog_v1.json), version 1.0, with market timezone Asia/Jakarta. There is one feature card for each of its 210 features, including the five raw OHLCV definitions.
 
 Each card retains four explanatory source fields:
 
