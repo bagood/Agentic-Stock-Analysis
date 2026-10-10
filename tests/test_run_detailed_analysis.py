@@ -249,6 +249,10 @@ class OutputDirectoryTests(unittest.TestCase):
 
 
 class ForecastArgumentTests(unittest.TestCase):
+    def setUp(self):
+        self.preflight = patch.object(runner, "preflight").start()
+        self.addCleanup(patch.stopall)
+
     def test_defaults_to_ten_sessions(self) -> None:
         self.assertEqual(parse_args([]).forecast_window, "10")
 
@@ -376,6 +380,7 @@ class ForecastArgumentTests(unittest.TestCase):
                             12.0,
                             forecast_type=rolling_window,
                             technical_config=ANY,
+                            _preflight=ANY,
                         )
                         for ticker in (
                             "BBCA" if rolling_window == "5dd" else "BMRI",
@@ -386,6 +391,10 @@ class ForecastArgumentTests(unittest.TestCase):
 
 
 class BatchFailureTests(unittest.TestCase):
+    def setUp(self):
+        self.preflight = patch.object(runner, "preflight").start()
+        self.addCleanup(patch.stopall)
+
     def run_batch(self, recommendations, stocks, outcomes):
         with patch.dict(os.environ, {
             "ML_BASE_URL": "https://data.example.test", "DETAILED_ANALYSIS_RESULT": "unused",

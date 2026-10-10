@@ -14,6 +14,7 @@ from typing import Any
 from detailedAnalysis.helper import build_api_url, fetch_json, load_env
 from detailedAnalysis.main import main as run_detailed_analysis
 from detailedAnalysis.technical_api import TechnicalConfig
+from detailedAnalysis.preflight import preflight
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
@@ -239,6 +240,7 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
         load_env(ENV_PATH)
         forecast_config = FORECAST_CONFIGS[forecast_window]
         technical_config = TechnicalConfig.from_environment(timeout)
+        checked = preflight(PROJECT_DIR, PROJECT_DIR / forecast_config["instructions_path"])
         output_dir = prepare_output_dir(
             str(
                 Path(os.environ["DETAILED_ANALYSIS_RESULT"])
@@ -305,6 +307,7 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
             timeout,
             forecast_type=forecast_config["rolling_window"],
             technical_config=technical_config,
+            _preflight=checked,
         ) != 0:
             failed_tickers.append(ticker.upper())
 

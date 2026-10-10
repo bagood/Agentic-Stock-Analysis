@@ -16,7 +16,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates \
+        ca-certificates bubblewrap ripgrep \
     && npm install -g "@openai/codex@${CODEX_VERSION}" \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

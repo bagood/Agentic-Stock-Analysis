@@ -12,6 +12,7 @@ import httpx
 from app.errors import CodexExecutionError
 from detailedAnalysis.technical_api import TechnicalConfig
 from tests.technical_fixtures import synthetic
+from detailedAnalysis.preflight import PreflightResult
 
 analysis = importlib.import_module("detailedAnalysis.main")
 
@@ -38,7 +39,9 @@ class DetailedAnalysisPipelineTests(unittest.TestCase):
         # Inject only HTTP; execute actual adapter, contract, and prompt.
         with patch("httpx.Client", return_value=http), patch.object(
             analysis, "run_codex", side_effect=codex_error
-        ) as codex, redirect_stderr(io.StringIO()) as errors:
+        ) as codex, patch.object(analysis, "preflight", return_value=PreflightResult(
+            analysis.PROJECT_DIR.resolve(), instructions.resolve(), 900
+        )), redirect_stderr(io.StringIO()) as errors:
             result = analysis.main(
                 " aali ", str(instructions), "5 trading sessions" if window == "5dd" else "10 trading sessions",
                 "https://data.example.test", directory.name,
@@ -55,7 +58,7 @@ class DetailedAnalysisPipelineTests(unittest.TestCase):
             codex.assert_called_once()
             prompt, output, working_dir = codex.call_args.args
             self.assertEqual(output.name, "AALI.md")
-            self.assertEqual(codex.call_args.kwargs, {"enable_search": True})
+            self.assertEqual(codex.call_args.kwargs, {"enable_search": True, "timeout_seconds": 900})
             self.assertEqual(prompt.count("<TECHNICAL_DATA_JSON>"), 1)
             encoded = prompt.split("<TECHNICAL_DATA_JSON>\n")[1].split("\n</TECHNICAL_DATA_JSON>")[0]
             self.assertEqual(json.loads(encoded), body)

@@ -504,3 +504,124 @@ Dockerfile.api          Lightweight FastAPI image
 Dockerfile.chat         Optional standalone Codex chat API image
 docker-compose.yml      Analysis and API services
 ```
+
+## Detailed-analysis sandbox preflight and rollout status
+
+Detailed analysis checks Codex, the selected horizon instructions, and local
+feature guides through the actual read-only sandbox **before** fetching data or
+clearing reports. Each supplied catalogued feature must also have a readable
+matching card; uncatalogued features retain the prompt's interpretation limits.
+Direct individual calls preflight too; batch calls pass the successful check to
+each ticker. Diagnose either horizon without model tokens:
+
+```bash
+docker compose run --rm --no-deps agentic-stock-analysis \
+  python -m detailedAnalysis.preflight --forecast-window 5
+docker compose run --rm --no-deps agentic-stock-analysis \
+  python -m detailedAnalysis.preflight --forecast-window 10
+```
+
+The image installs distribution `bubblewrap` and `ripgrep`, following
+[official sandbox prerequisites](https://learn.chatgpt.com/docs/sandboxing#prerequisites).
+The pinned Codex 0.146.0 Linux diagnostic syntax is `codex sandbox -- <command>`;
+there is no `linux` subcommand. The diagnostic uses a temporary unauthenticated
+Codex home because this command does not support `--ignore-user-config`.
+Report generation preserves the existing authentication home, skips personal
+configuration/rules, disables plugins, and explicitly sets read-only sandboxing,
+never approvals, search, medium reasoning, and `gpt-5.6-sol`. Project
+`.codex/config.toml` files are rejected rather than allowed to introduce MCP
+servers or hooks. The asynchronous chat runner keeps its independent MCP setup.
+
+Runtime investigation on 2026-10-10 used Docker Desktop 4.47.0, Engine 28.4.0,
+Linux arm64, Codex 0.146.0, Debian trixie bubblewrap 0.12.0 and ripgrep 14.1.1.
+Default Docker seccomp denied namespace creation despite enabled user namespaces
+(`/proc/sys/user/max_user_namespaces=31325`). The analysis service alone now uses
+`docker/analysis-seccomp.json`, derived from Docker's
+[default profile](https://github.com/moby/profiles/blob/main/seccomp/default.json)
+(original SHA-256 `6416b47770785a41ac59073cdc77d9fe98517df2799dc83ef207e622de3053f6`).
+The added allow rules cover `clone` only with `CLONE_NEWUSER`, plus `unshare`,
+`setns`, `mount`, `umount2`, and `pivot_root`. Removing each exception from the initially working bundled-helper profile was
+tested; each removal prevented the smoke command from succeeding. Docker capabilities are
+unchanged and seccomp continues filtering other syscalls.
+
+The distribution bubblewrap also needs Docker system-path masks removed: a
+syscall trace showed `mount("proc", ...) = EPERM` even in seccomp-unconfined
+diagnostic containers. A disposable test passed with those masks removed. The
+operator explicitly approved the analysis-only `systempaths=unconfined` setting,
+which is now enabled in default Compose together with the scoped seccomp profile.
+It removes Docker's default system-path masking and read-only restrictions,
+increasing exposure of kernel interfaces inside the container. It adds no
+capabilities, host namespaces, or privileged mode; Codex remains read-only.
+API and assistant services retain their existing security settings. The optional
+`docker-compose.sandbox-runtime.yml` also declares the approved settings, but it
+is no longer needed for the standard analysis command.
+
+Both actual Compose sandbox preflights passed after approval. To run a batch:
+
+```bash
+docker compose run --rm agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 5
+docker compose run --rm agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 10
+```
+
+On an unsupported runtime, preflight still returns nonzero before clearing
+reports or requesting data. Do not switch to danger-full-access or change macOS
+sysctls to work around Linux namespace failure. Other hosts may need a host
+AppArmor profile; investigate the Linux host's policy separately.
+Controlled AALI real-report verification passed for both horizons with the
+existing authenticated volume and its stale `localhost:8003/mcp` configuration:
+
+| Horizon | Published report | Bytes | Web searches | MCP tool calls |
+| --- | --- | ---: | ---: | ---: |
+| 5 sessions | `detailedAnalysisResults/verification/5dd/AALI.md` | 34,226 | 11 | 0 |
+| 10 sessions | `detailedAnalysisResults/verification/10dd/AALI.md` | 36,869 | 8 | 0 |
+
+Both runs emitted completed turns, exited zero, and published nonempty reports.
+Recorded successful command events include guide/index reads for both horizons
+and feature-card reads for ten sessions; the five-session run also read batches
+resolved through the feature index. Neither stderr nor the published reports
+contained the tested infrastructure-failure signatures. Sanitized event summaries
+are saved beside the reports as `verification.json`. Existing rolling-window
+reports were not cleared. These are execution checks, not proof that the model
+interpreted every card or produced financially correct conclusions.
+
+`CODEX_PREFLIGHT_TIMEOUT_SECONDS` defaults to 20.
+`CODEX_GENERATION_TIMEOUT_SECONDS` defaults to 900 and applies to the shared
+synchronous runner (detailed, entry, hold); it is separate from API HTTP timeouts.
+Timeouts kill and reap the process group. Structured events and stderr have a
+4 MiB capture limit each; reports have a 4 MiB limit. A completed turn, zero exit,
+and nonempty final output are required before atomic per-report replacement.
+Unrecoverable error/turn-failed events and narrow bubblewrap/sandbox diagnostic
+matches reject fallback responses. A failed infrastructure command is considered
+recovered only after a successful retry of the same command. Ordinary nonzero
+shell exits are permitted. Event fields were checked against the official
+`@openai/codex-sdk@0.146.0` types and
+[documented JSONL events](https://learn.chatgpt.com/docs/non-interactive-mode#make-output-machine-readable).
+Diagnostic matching is deliberately limited; it cannot prove every card was read
+or validate financial conclusions. User-facing diagnostics disclose only bounded
+allowlisted failure categories, never raw prompts, payloads or stderr.
+Per-report atomic publication does not preserve an entire prior rolling window
+if a later generation fails after successful preflight and batch cleanup.
+
+## Container Codex authentication and port migration
+
+Fresh volumes import only `/host-codex/auth.json`, with mode 0600, when no volume
+credentials exist. No personal config, plugins, history, or other state is copied.
+Existing `auth.json` and unrelated files remain untouched. This supports Codex's
+file credential store; a host keychain-only login is not portable into Linux.
+Use a file-backed login or `OPENAI_API_KEY` (mapped to `CODEX_API_KEY` without
+printing it). Explicit `CODEX_API_KEY` takes precedence. Authentication should be
+kept in the persistent volume so refreshed tokens survive container runs.
+
+There is no need to delete an existing volume or log in again solely because it
+contains old settings: synchronous generation ignores its `config.toml` and the
+chat runner supplies its own MCP endpoint. Optional targeted migration: back up
+and rename only `/root/.codex/config.toml` to `config.toml.personal-backup` inside
+the named volume. Leave `auth.json` and all unrelated state intact.
+
+REST uses host `http://localhost:8003`; MCP uses host
+`http://localhost:8004/mcp`. Inside Compose, chat uses
+`http://agentic-mcp:8000/mcp`. `localhost:8003/mcp` is neither the published MCP
+port nor the correct address inside a container. Report generation needs no
+report MCP service.

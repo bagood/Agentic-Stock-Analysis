@@ -9,6 +9,7 @@ from detailedAnalysis.helper import (
 )
 from detailedAnalysis.technical_api import TechnicalAPIClient, TechnicalConfig
 from llm_runner.codex_runner import run_codex
+from detailedAnalysis.preflight import PreflightResult, preflight, check_feature_cards
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,6 +24,7 @@ def main(
     *,
     forecast_type: str,
     technical_config: TechnicalConfig | None = None,
+    _preflight: PreflightResult | None = None,
 ) -> int:
     try:
         ticker = normalize_technical_ticker(ticker)
@@ -35,11 +37,17 @@ def main(
             output_dir = PROJECT_DIR / output_dir
 
         output_path = output_dir / f"{ticker}.md"
+        checked = _preflight
+        if checked is None:
+            checked = preflight(PROJECT_DIR, instructions_path)
+        elif checked.project != PROJECT_DIR.resolve() or checked.instructions != instructions_path.resolve():
+            raise CodexExecutionError("Preflight handoff does not match the selected instructions/project")
 
         result = TechnicalAPIClient(
             base_url,
             technical_config if technical_config is not None else TechnicalConfig.from_environment(timeout),
         ).retrieve(ticker, forecast_type)
+        check_feature_cards(PROJECT_DIR, result.indicators)
         technical_data_text = json.dumps(
             result.model_dump(),
             ensure_ascii=False,
@@ -60,6 +68,7 @@ def main(
             output_path,
             PROJECT_DIR,
             enable_search=True,
+            timeout_seconds=checked.generation_timeout,
         )
     except (
         KeyError,
