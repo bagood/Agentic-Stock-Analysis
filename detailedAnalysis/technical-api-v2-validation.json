@@ -1,0 +1,124 @@
+{
+  "date": "2026-10-10",
+  "timezone": "Asia/Jakarta",
+  "consumer_tests": {
+    "python_3_10_local": {
+      "passed": 124,
+      "failed": 0
+    },
+    "linux_validation_image": {
+      "passed": 124,
+      "failed": 0
+    },
+    "scope": "Historical implementation before trusted-context removal"
+  },
+  "backend_tests": {
+    "passed": 111,
+    "failed": 1,
+    "failure": "test_catalog_definitions_resolve_to_generating_functions: original backend catalog missing"
+  },
+  "local_artifact_audit": {
+    "environment": "prod",
+    "request_date": "2026-10-10",
+    "tickers": 105,
+    "requests": 210,
+    "outcomes": {
+      "ready": 181,
+      "feature_filter_unavailable": 29
+    },
+    "metadata_unavailable": {
+      "BAIK": [
+        "5dd",
+        "10dd"
+      ],
+      "CBRE": [
+        "5dd",
+        "10dd"
+      ],
+      "CUAN": [
+        "5dd",
+        "10dd"
+      ],
+      "HATM": [
+        "10dd"
+      ],
+      "INET": [
+        "5dd",
+        "10dd"
+      ],
+      "MBMA": [
+        "5dd",
+        "10dd"
+      ],
+      "MSJA": [
+        "5dd",
+        "10dd"
+      ],
+      "NCKL": [
+        "5dd",
+        "10dd"
+      ],
+      "NSSS": [
+        "5dd",
+        "10dd"
+      ],
+      "OMED": [
+        "5dd",
+        "10dd"
+      ],
+      "PACK": [
+        "5dd",
+        "10dd"
+      ],
+      "PGEO": [
+        "5dd",
+        "10dd"
+      ],
+      "RSCH": [
+        "5dd",
+        "10dd"
+      ],
+      "SMIL": [
+        "5dd",
+        "10dd"
+      ],
+      "VKTR": [
+        "5dd",
+        "10dd"
+      ]
+    }
+  },
+  "agent_evaluation": {
+    "codex_cli": "0.146.0",
+    "model": "gpt-5.6-sol",
+    "configuration": "CLI defaults via temporary --ignore-user-config --ephemeral wrapper",
+    "report": {
+      "scope": "Synthetic interpretation; no live news or production forecast evaluation",
+      "results": [
+        {
+          "forecast_type": "5dd",
+          "passed": true,
+          "checks": 13,
+          "latency_seconds": 8.99
+        },
+        {
+          "forecast_type": "10dd",
+          "passed": true,
+          "checks": 13,
+          "latency_seconds": 6.26
+        }
+      ]
+    },
+    "scope": "Historical context-injection evaluation; script removed at user request"
+  },
+  "release_status": "Not deployed; backend artifact/catalog and host CLI model blockers remain",
+  "latest_consumer_tests": {
+    "revision": "Remove generated trusted context; use instructions/features/",
+    "date": "2026-10-10",
+    "python": "3.10.20",
+    "passed": 121,
+    "failed": 0,
+    "container_rerun": false,
+    "real_agent_rerun": false
+  }
+}

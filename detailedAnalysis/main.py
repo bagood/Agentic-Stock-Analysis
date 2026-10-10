@@ -5,10 +5,9 @@ from pathlib import Path
 from app.errors import CodexExecutionError
 from detailedAnalysis.helper import (
     build_prompt,
-    build_technical_url,
-    fetch_json,
-    normalize_ticker,
+    normalize_technical_ticker,
 )
+from detailedAnalysis.technical_api import TechnicalAPIClient, TechnicalConfig
 from llm_runner.codex_runner import run_codex
 
 PROJECT_DIR = Path(__file__).resolve().parent.parent
@@ -21,9 +20,12 @@ def main(
     base_url: str,
     output_dir_value: str,
     timeout: float = 30.0,
+    *,
+    forecast_type: str,
+    technical_config: TechnicalConfig | None = None,
 ) -> int:
     try:
-        ticker = normalize_ticker(ticker)
+        ticker = normalize_technical_ticker(ticker)
         instructions_path = Path(instructions_value)
         if not instructions_path.is_absolute():
             instructions_path = PROJECT_DIR / instructions_path
@@ -34,12 +36,15 @@ def main(
 
         output_path = output_dir / f"{ticker}.md"
 
-        technical_url = build_technical_url(base_url, ticker)
-        technical_data = fetch_json(technical_url, timeout)
+        result = TechnicalAPIClient(
+            base_url,
+            technical_config if technical_config is not None else TechnicalConfig.from_environment(timeout),
+        ).retrieve(ticker, forecast_type)
         technical_data_text = json.dumps(
-            technical_data,
+            result.model_dump(),
             ensure_ascii=False,
-            indent=2,
+            separators=(",", ":"),
+            allow_nan=False,
         )
 
         instructions = instructions_path.read_text(encoding="utf-8")

@@ -111,13 +111,28 @@ the [technical API v2 contract](technical_api.md).
 
 The client validates the response's request identity, dates, aligned numeric/null
 series, quality counts, and feature-filter metadata before starting Codex. It
-supplies the full envelope as compact JSON plus definitions for emitted features
-from `technical_feature_catalog_v1.json`. Nulls, zeros, numeric precision, and
+supplies the full envelope as compact JSON alongside the selected strategy
+instructions. The agent reads the feature guide, index, and matching cards under
+`instructions/features/` for definitions and interpretation. Nulls, zeros, numeric precision, and
 metadata are preserved. HTTP failures retain their structured reason codes;
 invalid or legacy payloads fail the ticker rather than producing an analysis.
 Readiness does not establish exchange-calendar freshness. See the
 [consumer migration notes](detailedAnalysis/technical-api-v2-development.md)
 for implementation details and release checks.
+
+Feature definitions and interpretation rules are maintained in
+[the feature documentation](instructions/features/README.md). The prompt builder
+does not generate an additional definitions or consumer-assessment context block.
+
+Optional `TECHNICAL_API_TIMEOUT_SECONDS` overrides the runner's 30-second HTTP
+timeout. Optional `TECHNICAL_MAX_DATA_AGE_CALENDAR_DAYS` rejects technical data
+older than the configured positive integer calendar-age budget. Unset accepts
+explicitly dated analysis with freshness unverified; passing the budget still
+does not prove exchange-calendar freshness. Both settings work through exported
+environment variables, local `.env`, and the Compose analysis service's `env_file`.
+
+Run consumer regression checks with `python -m unittest discover -s tests` in an
+environment installed from `requirements.txt` (Python 3.10+).
 
 This command retrieves the recommendation lists for both rolling windows and
 selects up to four ML recommendations for each. When fewer than four scores are

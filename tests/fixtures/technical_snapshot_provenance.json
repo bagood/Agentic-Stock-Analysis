@@ -1,0 +1,14 @@
+{
+  "request_date": "2026-10-10",
+  "market_timezone": "Asia/Jakarta",
+  "environment": "prod",
+  "source": "Read-only local ML-Stock-Analysis TechnicalService; 5dd exactly matches user-supplied response",
+  "artifacts_sha256": {
+    "data/prod/stock/technical/AALI.csv": "466dfd6b376be6d6a807754ef1f23c0501a1e80b5a76a7a0b4c98779d541c01a",
+    "data/prod/stock/model_v1/medianLoss/artifacts/AALI-5dd-metadata.json": "e223227a736964632e87919591a5076e81a7c137d122ae81e8453f4b18d1750b",
+    "data/prod/stock/model_v1/medianGain/artifacts/AALI-5dd-metadata.json": "a5ef5f503b8f2d325c3f3eedcf31930d301af10c8a02176d30022b636c19f2ca",
+    "data/prod/stock/model_v1/medianLoss/artifacts/AALI-10dd-metadata.json": "f5510ce1c1c8ed4a79ce5ee5ab9029c7ead68fe2e6e8f975a190f3c8ec0c8816",
+    "data/prod/stock/model_v1/medianGain/artifacts/AALI-10dd-metadata.json": "b81c4813c8b411e6b0fd2a57e80e04d3883d177fe2e963fc916072cd8e3a0953"
+  },
+  "contract_sha256": "2793562c966e7761d587e2a388030225209753708684420a2b183478e78b2db7"
+}
