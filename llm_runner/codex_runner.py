@@ -40,6 +40,10 @@ def run_codex(
     command.extend(
         [
             "exec",
+            "--model",
+            "gpt-6.1-sol",
+            "-c",
+            'model_reasoning_effort="medium"',
             "--sandbox",
             "read-only",
             "--skip-git-repo-check",
