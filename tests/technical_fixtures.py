@@ -9,9 +9,28 @@ def supplied(window="5dd"):
     return json.loads((FIXTURES / f"technical_aali_{window}_v2.json").read_text())
 
 
+def schema_21(window="5dd"):
+    """Legacy indicator snapshot plus synthetic OHLCV, not a live 2.1 snapshot."""
+    body = copy.deepcopy(supplied(window))
+    body["schema_version"] = "2.1"
+    body["ohlcv"] = {
+        "open": [7000, 7050, 7100],
+        "high": [7100, 7150, 7200],
+        "low": [6950, 7000, 7050],
+        "close": [7050, 7100, 7150],
+        "volume": [0, 1300000, None],
+    }
+    body["ohlcv_metadata"] = {
+        "source": "technical_csv", "price_currency": "unknown",
+        "volume_unit": "unknown", "price_adjustment": "unknown",
+    }
+    body["quality"]["ohlcv_null_counts_by_session"] = [0, 0, 1]
+    return body
+
+
 def synthetic(window="5dd"):
     """Synthetic edge-case values; never represented as a real backend snapshot."""
-    body = copy.deepcopy(supplied(window))
+    body = schema_21(window)
     body["indicators"] = {
         "RSI Value": [50, 55, 53],
         "ATR Bearish": [0, 0, 0],

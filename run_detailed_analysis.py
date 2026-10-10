@@ -1,3 +1,9 @@
+"""Run forecasts using validated Technical API schema 2.1 historical data.
+
+The shared dates align OHLCV and indicators for three historical sessions;
+--forecast-window selects the future horizon and model metadata union.
+"""
+
 import argparse
 import os
 import shutil

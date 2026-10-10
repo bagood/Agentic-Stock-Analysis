@@ -1,4 +1,4 @@
-"""Consumer contract ported from ML-Stock-Analysis aea0b510babae2b7de891e5fb5e67e0ec39e4f52.
+"""Strict schema-2.1 consumer contract documented in technical_api.md.
 
 Required wire fields have no defaults. Source membership needs a backend audit;
 the client can validate only the emitted envelope and its internal consistency.
@@ -30,6 +30,9 @@ ISODate = Annotated[str, Field(pattern=r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"), AfterVa
 Count = Annotated[int, Field(strict=True, ge=0)]
 Number = StrictInt | Annotated[StrictFloat, Field(allow_inf_nan=False)] | None
 Series = Annotated[list[Number], Field(min_length=3, max_length=3)]
+Price = Annotated[StrictInt, Field(ge=0)] | Annotated[StrictFloat, Field(ge=0, allow_inf_nan=False)] | None
+PriceSeries = Annotated[list[Price], Field(min_length=3, max_length=3)]
+VolumeSeries = Annotated[list[Annotated[StrictInt, Field(ge=0)] | None], Field(min_length=3, max_length=3)]
 
 
 def metadata_sources(forecast_type: ForecastType) -> list[tuple[str, str]]:
@@ -69,10 +72,40 @@ class TechnicalQuality(ContractModel):
     data_age_calendar_days: Annotated[int, Field(ge=1)]
     freshness_status: Literal["unverified_without_exchange_calendar"]
     null_counts_by_session: Annotated[list[Count], Field(min_length=3, max_length=3)]
+    ohlcv_null_counts_by_session: Annotated[list[Annotated[Count, Field(le=5)]], Field(min_length=3, max_length=3)]
+
+
+class OHLCVMetadata(ContractModel):
+    source: Literal["technical_csv"]
+    price_currency: Literal["unknown", "IDR"]
+    volume_unit: Literal["unknown", "shares"]
+    price_adjustment: Literal["unknown", "adjusted", "unadjusted"]
+
+
+class OHLCV(ContractModel):
+    open: PriceSeries
+    high: PriceSeries
+    low: PriceSeries
+    close: PriceSeries
+    volume: VolumeSeries
+
+    @model_validator(mode="after")
+    def validate_bars(self):
+        for i in range(3):
+            low, high = self.low[i], self.high[i]
+            if low is not None and high is not None and high < low:
+                raise ValueError("Observed high must be at least observed low")
+            for price in (self.open[i], self.close[i]):
+                if price is not None and (
+                    (low is not None and price < low)
+                    or (high is not None and price > high)
+                ):
+                    raise ValueError("Observed open/close must lie within available bounds")
+        return self
 
 
 class TechnicalResponse(ContractModel):
-    schema_version: Literal["2.0"]
+    schema_version: Literal["2.1"]
     ticker: Ticker
     forecast_type: ForecastType
     market_timezone: Literal["Asia/Jakarta"]
@@ -83,6 +116,8 @@ class TechnicalResponse(ContractModel):
     order: Literal["oldest_to_newest"]
     data_as_of: ISODate
     quality: TechnicalQuality
+    ohlcv: OHLCV
+    ohlcv_metadata: OHLCVMetadata
     feature_filter: FeatureFilter
     feature_catalog_version: Literal["1.0"]
     indicators: dict[str, Series]
@@ -112,6 +147,9 @@ class TechnicalResponse(ContractModel):
         counts = [sum(values[i] is None for values in self.indicators.values()) for i in range(3)]
         if counts != self.quality.null_counts_by_session:
             raise ValueError("Null counts must agree with observations")
+        ohlcv_counts = [sum(values[i] is None for values in self.ohlcv.model_dump().values()) for i in range(3)]
+        if ohlcv_counts != self.quality.ohlcv_null_counts_by_session:
+            raise ValueError("OHLCV null counts must agree with observations")
         return self
 
 

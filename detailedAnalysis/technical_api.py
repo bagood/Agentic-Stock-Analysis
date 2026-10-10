@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 DOMAIN_STATUS = {
     "technical_data_missing": 404,
     "no_eligible_sessions": 404,
+    "ohlcv_data_missing": 409,
     "insufficient_sessions": 409,
     "feature_filter_unavailable": 409,
     "no_eligible_indicators": 409,
@@ -102,7 +103,7 @@ class TechnicalAPIClient:
         try:
             envelope = TechnicalResponse.model_validate(load_json(response.content))
         except (ValueError, ValidationError) as exc:
-            raise TechnicalContractError("Invalid technical v2 response", **context) from exc
+            raise TechnicalContractError("Invalid technical schema 2.1 response", **context) from exc
         if envelope.ticker != ticker or envelope.forecast_type != forecast_type:
             raise TechnicalContractError("Response identity does not match request", **context)
         age = envelope.quality.data_age_calendar_days
@@ -112,11 +113,12 @@ class TechnicalAPIClient:
                 f"Calendar age {age} exceeds configured budget {budget}", **context)
         logger.info(
             "technical_retrieval ticker=%s horizon=%s as_of=%s age=%s included=%s "
-            "unavailable=%s null_counts=%s bytes=%s",
+            "unavailable=%s null_counts=%s ohlcv_null_counts=%s bytes=%s",
             ticker, forecast_type, envelope.data_as_of, age,
             envelope.feature_filter.included_count,
             envelope.feature_filter.selected_unavailable_count,
-            envelope.quality.null_counts_by_session, len(response.content),
+            envelope.quality.null_counts_by_session,
+            envelope.quality.ohlcv_null_counts_by_session, len(response.content),
         )
         return envelope
 

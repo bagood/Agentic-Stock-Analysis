@@ -60,7 +60,7 @@ class TechnicalClientTests(unittest.TestCase):
     def test_malformed_legacy_and_wrong_identity_never_pass(self):
         cases = [b"not json", b"[]", b'{"dates":[]}', b'{"schema_version":"2.0","schema_version":"2.0"}',
                  b'{"indicators":{"a":[NaN,0,0]}}']
-        for key, value in (("schema_version", "1.0"), ("feature_catalog_version", "2.0"), ("ticker", "BBCA"), ("forecast_type", "10dd")):
+        for key, value in (("schema_version", "1.0"), ("schema_version", "2.0"), ("feature_catalog_version", "2.0"), ("ticker", "BBCA"), ("forecast_type", "10dd")):
             body = synthetic()
             body[key] = value
             cases.append(json.dumps(body).encode())

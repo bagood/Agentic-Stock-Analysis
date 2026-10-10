@@ -3,9 +3,6 @@
 agentic-stock-analysis generates short-term stock-analysis reports and exposes
 the generated reports through a small FastAPI service.
 
-For the updated script commands, instruction-file renames, and upgrade steps,
-see the [5- and 10-session migration guide](docs/trading-session-migration.md).
-
 The analysis workflow:
 
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
@@ -107,7 +104,8 @@ The only accepted forecast-window values are `5` and `10`.
 Recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
 Technical requests include the matching `forecast_type=5dd` or `10dd` at
 `GET /technical/`. Both windows receive three historical observations, following
-the [technical API v2 contract](technical_api.md).
+the technical API v2 contract validated by
+[`detailedAnalysis/technical_contract.py`](detailedAnalysis/technical_contract.py).
 
 The client validates the response's request identity, dates, aligned numeric/null
 series, quality counts, and feature-filter metadata before starting Codex. It
@@ -117,8 +115,9 @@ instructions. The agent reads the feature guide, index, and matching cards under
 metadata are preserved. HTTP failures retain their structured reason codes;
 invalid or legacy payloads fail the ticker rather than producing an analysis.
 Readiness does not establish exchange-calendar freshness. See the
-[consumer migration notes](detailedAnalysis/technical-api-v2-development.md)
-for implementation details and release checks.
+[technical API client](detailedAnalysis/technical_api.py) and
+[contract regression tests](tests/test_technical_contract.py)
+for implementation details and validation examples.
 
 Feature definitions and interpretation rules are maintained in
 [the feature documentation](instructions/features/README.md). The prompt builder

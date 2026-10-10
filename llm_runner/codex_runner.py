@@ -41,7 +41,7 @@ def run_codex(
         [
             "exec",
             "--model",
-            "gpt-6.1-sol",
+            "gpt-5.6-sol",
             "-c",
             'model_reasoning_effort="medium"',
             "--sandbox",

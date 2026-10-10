@@ -69,7 +69,12 @@ class DetailedAnalysisPipelineTests(unittest.TestCase):
 
     def test_failures_prevent_codex_execution(self):
         cases = [({"detail":{"code":"insufficient_sessions","message":"unavailable","ticker":"AALI","forecast_type":"5dd"}},409,None),
+                 ({"detail":{"code":"ohlcv_data_missing","message":"unavailable","ticker":"AALI","forecast_type":"5dd"}},409,None),
                  ({"schema_version":"1.0"},200,None)]
+        for key in ("ohlcv", "ohlcv_metadata"):
+            missing = synthetic()
+            del missing[key]
+            cases.append((missing, 200, None))
         unsupported_catalog = synthetic()
         unsupported_catalog["feature_catalog_version"] = "2.0"
         cases.append((unsupported_catalog,200,None))
