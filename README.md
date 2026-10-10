@@ -104,8 +104,20 @@ The `5` mode uses
 recommendation API's `5dd` rolling window. The `10` mode uses
 `instructions/stock-upside-analysis-10-instructions.md` and requests `10dd`.
 The only accepted forecast-window values are `5` and `10`.
-Technical and
-recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
+Recommendation and technical endpoint URLs are derived from `ML_BASE_URL`.
+Technical requests include the matching `forecast_type=5dd` or `10dd` at
+`GET /technical/`. Both windows receive three historical observations, following
+the [technical API v2 contract](technical_api.md).
+
+The client validates the response's request identity, dates, aligned numeric/null
+series, quality counts, and feature-filter metadata before starting Codex. It
+supplies the full envelope as compact JSON plus definitions for emitted features
+from `technical_feature_catalog_v1.json`. Nulls, zeros, numeric precision, and
+metadata are preserved. HTTP failures retain their structured reason codes;
+invalid or legacy payloads fail the ticker rather than producing an analysis.
+Readiness does not establish exchange-calendar freshness. See the
+[consumer migration notes](detailedAnalysis/technical-api-v2-development.md)
+for implementation details and release checks.
 
 This command retrieves the recommendation lists for both rolling windows and
 selects up to four ML recommendations for each. When fewer than four scores are
