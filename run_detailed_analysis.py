@@ -1,3 +1,9 @@
+"""Run forecasts using validated Technical API schema 2.1 historical data.
+
+The shared dates align OHLCV and indicators for three historical sessions;
+--forecast-window selects the future horizon and model metadata union.
+"""
+
 import argparse
 import os
 import shutil
@@ -7,6 +13,8 @@ from typing import Any
 
 from detailedAnalysis.helper import build_api_url, fetch_json, load_env
 from detailedAnalysis.main import main as run_detailed_analysis
+from detailedAnalysis.technical_api import TechnicalConfig
+from detailedAnalysis.preflight import preflight
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
@@ -71,7 +79,7 @@ def parse_scored_recommendations(payload: Any) -> list[tuple[str, float]]:
 
         ticker = recommendation.get("ticker")
         score = recommendation.get("score")
-        if not isinstance(ticker, str) or not ticker.strip():
+        if not isinstance(ticker, str) or not ticker.strip() or not ticker.isascii():
             raise ValueError(f"Recommendation at index {index} has an invalid ticker")
         if isinstance(score, bool) or not isinstance(score, (int, float)):
             raise ValueError(f"Recommendation at index {index} has an invalid score")
@@ -204,7 +212,7 @@ def select_stock_tickers(payload: Any, trading_window: str) -> list[str]:
         else:
             raise ValueError(f"Stock at index {index} must be a string or object")
 
-        if not isinstance(ticker, str) or not ticker.strip():
+        if not isinstance(ticker, str) or not ticker.strip() or not ticker.isascii():
             raise ValueError(f"Stock at index {index} has an invalid ticker")
         if item_window != trading_window:
             raise ValueError(
@@ -231,6 +239,8 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
     try:
         load_env(ENV_PATH)
         forecast_config = FORECAST_CONFIGS[forecast_window]
+        technical_config = TechnicalConfig.from_environment(timeout)
+        checked = preflight(PROJECT_DIR, PROJECT_DIR / forecast_config["instructions_path"])
         output_dir = prepare_output_dir(
             str(
                 Path(os.environ["DETAILED_ANALYSIS_RESULT"])
@@ -295,6 +305,9 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
             base_url,
             str(output_dir),
             timeout,
+            forecast_type=forecast_config["rolling_window"],
+            technical_config=technical_config,
+            _preflight=checked,
         ) != 0:
             failed_tickers.append(ticker.upper())
 

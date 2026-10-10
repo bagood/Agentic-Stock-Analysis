@@ -7,6 +7,10 @@ services:
       args:
         CODEX_VERSION: "0.146.0"
     image: agentic-stock-analysis-codex:latest
+    security_opt:
+      - seccomp=./docker/analysis-seccomp.json
+      # Approved analysis-only exception: bubblewrap needs its own proc mount.
+      - systempaths=unconfined
     env_file:
       - path: .env
     environment:

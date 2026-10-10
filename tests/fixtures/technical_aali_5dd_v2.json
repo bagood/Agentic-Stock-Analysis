@@ -1,0 +1,949 @@
+{
+    "schema_version": "2.0",
+    "ticker": "AALI",
+    "forecast_type": "5dd",
+    "market_timezone": "Asia/Jakarta",
+    "selection_policy": "latest_available_before_request_date",
+    "requested_sessions": 3,
+    "returned_sessions": 3,
+    "dates": [
+        "2026-10-07",
+        "2026-10-08",
+        "2026-10-09"
+    ],
+    "order": "oldest_to_newest",
+    "data_as_of": "2026-10-09",
+    "quality": {
+        "request_date": "2026-10-10",
+        "data_age_calendar_days": 1,
+        "freshness_status": "unverified_without_exchange_calendar",
+        "null_counts_by_session": [
+            55,
+            55,
+            55
+        ]
+    },
+    "feature_filter": {
+        "source": "model_metadata",
+        "key": "selected_features",
+        "strategy": "union",
+        "model_version": 1,
+        "sources": [
+            {
+                "label_type": "medianLoss",
+                "window": "5dd"
+            },
+            {
+                "label_type": "medianGain",
+                "window": "5dd"
+            }
+        ],
+        "selected_union_count": 195,
+        "included_count": 180,
+        "selected_unavailable_count": 15,
+        "excluded_not_selected_count": 30
+    },
+    "feature_catalog_version": "1.0",
+    "indicators": {
+        "ATR Bullish": [
+            1,
+            1,
+            1
+        ],
+        "ATR Bearish": [
+            0,
+            0,
+            0
+        ],
+        "ATR Stop Distance Percent": [
+            0.08402763408618187,
+            0.0677195285227844,
+            0.08550984003234882
+        ],
+        "Aroon Up": [
+            48.0,
+            44.0,
+            40.0
+        ],
+        "Aroon Down": [
+            76.0,
+            72.0,
+            68.0
+        ],
+        "Aroon Oscillator": [
+            -28.0,
+            -28.0,
+            -28.0
+        ],
+        "Aroon Change Position": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Aroon Up Trend": [
+            0,
+            0,
+            0
+        ],
+        "Aroon Down Trend": [
+            1,
+            1,
+            0
+        ],
+        "Plus Directional Index": [
+            26.369295710995868,
+            24.280646951772123,
+            25.2213217715581
+        ],
+        "ADX Value": [
+            32.27328870626728,
+            31.026296840749264,
+            30.340214727083588
+        ],
+        "ADXR Value": [
+            44.65486295110276,
+            42.88012351490783,
+            40.97822530644599
+        ],
+        "Directional Index Spread": [
+            11.49727549832078,
+            6.266189929236223,
+            8.899102993714013
+        ],
+        "ADX Strong Trend": [
+            1,
+            1,
+            1
+        ],
+        "ADX Change 5D": [
+            -6.265483089960881,
+            -4.866310912591448,
+            -3.980300192605167
+        ],
+        "Bull Power Up Trend": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Bull Power 80% Positives": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Bear Power Trend": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Bear Power 80% Negatives": [
+            1.0,
+            0.0,
+            0.0
+        ],
+        "Bull Power Percent": [
+            0.04023800910623144,
+            0.034679880973306765,
+            0.040787880091200435
+        ],
+        "Bear Power Percent": [
+            0.02566074963101286,
+            0.005006290468855812,
+            0.002097403900724246
+        ],
+        "MACD Near 0": [
+            1,
+            1,
+            1
+        ],
+        "MACD Non-Near 0 Negative": [
+            0,
+            0,
+            0
+        ],
+        "MACD Non-Near 0 Positive": [
+            0,
+            0,
+            0
+        ],
+        "MACD Percent": [
+            0.01222392771202134,
+            0.013131995378064028,
+            0.015741808100789182
+        ],
+        "MACD Signal Percent": [
+            0.009743619712316902,
+            0.010400914365754972,
+            0.01143294602027429
+        ],
+        "MACD Histogram Percent": [
+            0.002480307999704438,
+            0.0027310810123090568,
+            0.004308862080514892
+        ],
+        "MACD Histogram Change 5D": [
+            0.01640935780491091,
+            0.01514046808539649,
+            0.012416311139643846
+        ],
+        "SuperTrend Change": [
+            0,
+            0,
+            0
+        ],
+        "Vortex Positive": [
+            0.9677418323361293,
+            0.9668873388548885,
+            1.0081362844146855
+        ],
+        "Vortex Negative": [
+            1.032257928115872,
+            1.0529799996562481,
+            0.9893880988938525
+        ],
+        "Vortex Spread": [
+            -0.0645160957797426,
+            -0.08609266080135958,
+            0.018748185520833016
+        ],
+        "Keltner Percent B": [
+            0.888117634804485,
+            0.712727858552941,
+            0.8725014151673911
+        ],
+        "Keltner Overbought": [
+            0,
+            0,
+            0
+        ],
+        "Keltner Oversold": [
+            0,
+            0,
+            0
+        ],
+        "Keltner Width": [
+            0.12167829046441478,
+            0.12260671595629467,
+            0.12600344794797574
+        ],
+        "Donchian Percent B": [
+            0.81818176801859,
+            0.6818181497701402,
+            0.8762873217797137
+        ],
+        "Donchian Overbought": [
+            0,
+            0,
+            0
+        ],
+        "Donchian Oversold": [
+            0,
+            0,
+            0
+        ],
+        "Width Donchian Increasing": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Width Donchian Decreasing": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Donchian Width": [
+            0.13373855412675645,
+            0.13373855412675645,
+            0.13373855412675645
+        ],
+        "Bollinger Percent B": [
+            0.754079681454438,
+            0.6403126684345868,
+            0.79906057524256
+        ],
+        "Bollinger Overbought": [
+            0,
+            0,
+            0
+        ],
+        "Bollinger Oversold": [
+            0,
+            0,
+            0
+        ],
+        "Bollinger Width": [
+            0.1600101311639953,
+            0.1600101311639953,
+            0.16105303989244593
+        ],
+        "RSI Value": [
+            63.089648287735,
+            58.00471606659483,
+            62.630461501448025
+        ],
+        "RSI Rate of Change 5": [
+            13.881366198070047,
+            11.683803242407535,
+            6.587729372547955
+        ],
+        "RSI Rate of Change 10": [
+            19.92446097670294,
+            16.531143903127564,
+            18.786869717910164
+        ],
+        "Stochastic J": [
+            100.75756822525483,
+            90.13207973537843,
+            96.77493390318253
+        ],
+        "Stochastic K Value": [
+            74.9999958894365,
+            78.6713222405071,
+            85.3810625670621
+        ],
+        "Stochastic D Value": [
+            62.12120972152735,
+            72.94094349307143,
+            79.6841268990019
+        ],
+        "Stochastic K Minus D": [
+            12.878786167909155,
+            5.730378747435665,
+            5.696935668060206
+        ],
+        "Stochastic Oscillator Overbought": [
+            0.0,
+            0.0,
+            1.0
+        ],
+        "RSI 7": [
+            71.67388830926149,
+            60.308906982113356,
+            68.59433265520924
+        ],
+        "RSI 21": [
+            61.78755438525359,
+            58.36969274143878,
+            61.5542113752983
+        ],
+        "On Balance Volume Increasing": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "OBV to MA20 Ratio": [
+            0.9865180151222025,
+            0.9661964524250991,
+            0.9861837862640948
+        ],
+        "OBV Change 5D Normalized": [
+            0.04187836040760389,
+            0.04430387475934328,
+            0.039367009239270015
+        ],
+        "MFI Value": [
+            29.72582317264937,
+            29.85923644278202,
+            35.340545097266755
+        ],
+        "MFI Overbought": [
+            0,
+            0,
+            0
+        ],
+        "MFI Increasing": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "MFI Decreasing": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "CMF Value": [
+            0.0241460975202412,
+            0.06622169980082242,
+            0.0711983698034777
+        ],
+        "CMF Change 5D": [
+            0.05934243943219639,
+            0.18072613503405155,
+            0.15360194962887136
+        ],
+        "Strong Positive CMF": [
+            0,
+            0,
+            0
+        ],
+        "Negative CMF": [
+            0,
+            0,
+            0
+        ],
+        "Crossover CMF": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Accumulation Distribution Line Increasing": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "Accumulation Distribution Line Decreasing": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "ADL Change 5D Normalized": [
+            0.023687422858170482,
+            0.026319172331900727,
+            0.026095607677466645
+        ],
+        "PVO Value": [
+            1.5497998884273094,
+            3.5757335765798115,
+            1.6436237980602237
+        ],
+        "PVO Signal": [
+            7.927928184465642,
+            7.057489262888476,
+            5.974716169922825
+        ],
+        "PVO Histogram": [
+            -6.378128296038333,
+            -3.4817556863086643,
+            -4.331092371862601
+        ],
+        "PVO Histogram Change 5D": [
+            -3.342986730517697,
+            -2.283668226972343,
+            -2.515453556126893
+        ],
+        "Fisher Transform": [
+            0.59915243132312,
+            1.0281009515864727,
+            1.4506438060079492
+        ],
+        "Fisher Transform Trigger": [
+            -0.041292881250142854,
+            0.59915243132312,
+            1.0281009515864727
+        ],
+        "Fisher Up trend": [
+            0,
+            0,
+            0
+        ],
+        "Fisher Down Trend": [
+            0,
+            0,
+            0
+        ],
+        "Fisher Spread": [
+            0.6404453125732629,
+            0.42894852026335273,
+            0.42254285442147643
+        ],
+        "Fisher Change 5D": [
+            2.7731020771964183,
+            3.018777426278774,
+            2.985878757832117
+        ],
+        "Fisher Reversal": [
+            0.0,
+            0.0,
+            0.0
+        ],
+        "Foreign Net Intensity 1D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Buy Share 1D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Sell Share 1D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Participation 1D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Flow Signed Log": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Buy Share 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Sell Share 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Participation 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Flow ZScore 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Accumulation Day Share 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Value Intensity 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Buy Share 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Sell Share 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Participation 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Flow ZScore 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Accumulation Day Share 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Value Intensity 10D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Buy Share 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Sell Share 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Participation 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Flow ZScore 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Accumulation Day Share 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Value Intensity 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Buy Share 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Sell Share 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Participation 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Flow ZScore 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Accumulation Day Share 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Value Intensity 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity EMA 5D Minus 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Net Intensity Acceleration 5D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Flow Return Correlation 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Flow Price Divergence 20D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Flow Return Correlation 60D": [
+            null,
+            null,
+            null
+        ],
+        "Foreign Flow Price Divergence 60D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume Share 1D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume Share 5D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value Share 5D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume ZScore 5D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value ZScore 5D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Frequency ZScore 5D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume Share 20D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value Share 20D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume ZScore 20D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value ZScore 20D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Frequency ZScore 20D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume Share 60D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value Share 60D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Volume ZScore 60D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Value ZScore 60D": [
+            null,
+            null,
+            null
+        ],
+        "Non Regular Frequency ZScore 60D": [
+            null,
+            null,
+            null
+        ],
+        "Price Momentum 5D": [
+            0.07187496390659454,
+            0.06645566240810297,
+            0.047141324635723514
+        ],
+        "Price Momentum 10D": [
+            0.09235664063319615,
+            0.08360131296401807,
+            0.10049881705588937
+        ],
+        "Price Momentum 20D": [
+            -0.0029069753862381864,
+            0.0,
+            0.004525127842919696
+        ],
+        "Volume Ratio 20D": [
+            0.5684000529783781,
+            1.1792003517084728,
+            0.7740735647001107
+        ],
+        "Log Return 1D": [
+            0.005847967134645415,
+            -0.017647508472403928,
+            0.02507363755211678
+        ],
+        "Log Return 3D": [
+            0.03863777424951209,
+            0.002971768969999289,
+            0.013274096214358266
+        ],
+        "Log Return 5D": [
+            0.06940941769901876,
+            0.06434068507690327,
+            0.04606390332922494
+        ],
+        "Log Return 10D": [
+            0.08833741798894934,
+            0.08029004289659802,
+            0.09576354706866219
+        ],
+        "Log Return 20D": [
+            -0.002911208845551627,
+            0.0,
+            0.004514920234161224
+        ],
+        "Open Gap Percent": [
+            -2.7477769252529308e-9,
+            -0.005830895497549236,
+            0.007080078125
+        ],
+        "Intraday Return Percent": [
+            0.005865102639296068,
+            -0.011730205278592342,
+            0.01818181818181818
+        ],
+        "High Low Range Percent": [
+            0.014577259475218582,
+            0.029673590504450953,
+            0.03869047619047619
+        ],
+        "Close Location Value": [
+            1.0,
+            0.0,
+            0.8461538461538461
+        ],
+        "Close to EMA 5D": [
+            0.023880701376519955,
+            0.003972268295411197,
+            0.01945146341748186
+        ],
+        "Close to EMA 10D": [
+            0.03886747430414528,
+            0.016868697663506,
+            0.034657253903362654
+        ],
+        "Close to EMA 20D": [
+            0.047225490302101845,
+            0.026081864129591202,
+            0.046936462676591614
+        ],
+        "Close to EMA 50D": [
+            0.08887822889013877,
+            0.06690911415774589,
+            0.0899806950295547
+        ],
+        "EMA 5D to 20D Spread": [
+            0.022800301728704155,
+            0.022022118072761773,
+            0.026960576589857916
+        ],
+        "EMA 10D to 50D Spread": [
+            0.04813968655577721,
+            0.049210302774802164,
+            0.05347030711617596
+        ],
+        "Realized Volatility 5D": [
+            0.28846278943380577,
+            0.3126758428646601,
+            0.2346853411034228
+        ],
+        "Realized Volatility 20D": [
+            0.3500179618103784,
+            0.3480179040149618,
+            0.3517094716529795
+        ],
+        "Realized Volatility 60D": [
+            0.31396681831880735,
+            0.3172114323512942,
+            0.3196862313168024
+        ],
+        "Volatility 5D to 20D Ratio": [
+            0.8241371041126168,
+            0.8984475777177766,
+            0.6672704604753418
+        ],
+        "Volatility 20D to 60D Ratio": [
+            1.1148246928914765,
+            1.097116523938996,
+            1.1001708462834696
+        ],
+        "ATR Percent 14D": [
+            0.028678071643577118,
+            0.029435251702216052,
+            0.029419528616319735
+        ],
+        "Distance From 20D High": [
+            -0.02279202146115643,
+            -0.039886030569975556,
+            -0.015508136814916345
+        ],
+        "Distance From 20D Low": [
+            0.1172637916403825,
+            0.09771982776504524,
+            0.1255916202668921
+        ],
+        "Price ZScore 20D": [
+            1.0163187258177724,
+            0.5612506737383578,
+            1.196242300970264
+        ],
+        "Distance From 60D High": [
+            -0.02279202146115643,
+            -0.039886030569975556,
+            -0.015508136814916345
+        ],
+        "Distance From 60D Low": [
+            0.36653385120400717,
+            0.34262948016630956,
+            0.37125652122962677
+        ],
+        "Volume Change 1D": [
+            -0.3263844606857311,
+            1.1093715866889973,
+            -0.349109362054681
+        ],
+        "Volume Change 5D": [
+            -0.3791029930373452,
+            -0.08491281273692186,
+            -0.24383396831762583
+        ],
+        "Volume ZScore 20D": [
+            -0.6840862720846208,
+            0.28851504754888907,
+            -0.3595396381616861
+        ],
+        "Volume ZScore 60D": [
+            -0.33028504022821303,
+            0.9236160168663636,
+            0.05142861774213454
+        ],
+        "Dollar Volume Ratio 20D": [
+            0.5966167379548935,
+            1.2154603457101933,
+            0.8183477075697105
+        ],
+        "Up Volume Share 20D": [
+            0.37994602827720936,
+            0.37368211090214853,
+            0.36834283391801104
+        ],
+        "Return Volume Correlation 20D": [
+            -0.30283570190459114,
+            -0.3300383256724375,
+            -0.34827418841560587
+        ],
+        "Return Volume Correlation 60D": [
+            0.05695707006772556,
+            0.03723845239334465,
+            0.02277804748547635
+        ],
+        "Price Volume Divergence 20D": [
+            -0.04748202980128604,
+            0.018563255814290844,
+            -0.016561799135304422
+        ],
+        "Choppiness Index 14D": [
+            47.715369679876346,
+            51.29553487613316,
+            50.31996949601205
+        ],
+        "Hurst Exponent 100D": [
+            0.7298617400861246,
+            0.758617499386768,
+            0.7186225072190394
+        ],
+        "Regime Persistent": [
+            1,
+            1,
+            1
+        ],
+        "Regime Mean Reverting": [
+            0,
+            0,
+            0
+        ]
+    }
+}

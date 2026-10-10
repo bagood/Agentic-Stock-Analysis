@@ -1,0 +1,8 @@
+# Analysis-only runtime settings explicitly approved by the operator.
+# Default docker-compose.yml now includes these settings; this file is redundant.
+# Use only with docker-compose.yml; do not apply to the assistant/API services.
+services:
+  agentic-stock-analysis:
+    security_opt:
+      - seccomp=./docker/analysis-seccomp.json
+      - systempaths=unconfined

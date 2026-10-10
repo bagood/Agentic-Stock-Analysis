@@ -1,0 +1,1279 @@
+{
+  "version": "1.0",
+  "market_timezone": "Asia/Jakarta",
+  "provenance": {
+    "source": "instructions/features/*.md (catalog-1.0 reference cards)",
+    "source_cards_sha256": "3decfd80bbaf63ad557725ec2bce285f271ef1df07369530feef442733e5ac62",
+    "scope": "Consumer interpretation catalog; original backend catalog unavailable"
+  },
+  "notes": [
+    "Definitions, units, lookbacks, and publication lags are preserved from local feature cards.",
+    "Lookbacks count trading observations, not calendar days or forecast sessions; recursive history may exceed nominal lookbacks.",
+    "Decimal ratios use 0.02 for 2%; RSI changes use points; PVO outputs use percentage points.",
+    "Foreign/non-regular publication lag is already applied to emitted values; do not shift them again.",
+    "Null, zero, and omitted fields are distinct. A binary zero may reflect unavailable underlying warmup comparisons.",
+    "Catalog definitions do not establish freshness, continuity, raw OHLCV availability, or a complete model vector."
+  ],
+  "features": {
+    "Accumulation Distribution Line Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 cumulative ADL observations < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "cumulative history plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Accumulation Distribution Line Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 cumulative ADL observations > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "cumulative history plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "ADL Change 5D Normalized": {
+      "meaning": "(ADL(t)-ADL(t-5)) / mean(abs(ADL),20)",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "cumulative history plus 20 rows and 5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "ADX Change 5D": {
+      "meaning": "ADX(t) - ADX(t-5)",
+      "unit_scale": "points",
+      "lookback_sessions": "ADX(14) plus 5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "ADX Strong Trend": {
+      "meaning": "1 when ADX Value >= 25; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "ADX Value": {
+      "meaning": "Average directional movement strength",
+      "unit_scale": "index points",
+      "lookback_sessions": "14; recursive smoothing (ADXR also prior ADX)",
+      "publication_lag_sessions": 0
+    },
+    "ADXR Value": {
+      "meaning": "Average directional movement rating",
+      "unit_scale": "index points",
+      "lookback_sessions": "14; recursive smoothing (ADXR also prior ADX)",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Change Position": {
+      "meaning": "1 when (Aroon Up >= Aroon Down) differs from previous row; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "25 plus previous state",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Down Trend": {
+      "meaning": "1 when Aroon Down >= 70; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "25 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Down": {
+      "meaning": "Recency of lowest low",
+      "unit_scale": "points; Up/Down 0..100, oscillator -100..100",
+      "lookback_sessions": "25 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Oscillator": {
+      "meaning": "Aroon Up - Aroon Down",
+      "unit_scale": "points; Up/Down 0..100, oscillator -100..100",
+      "lookback_sessions": "25 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Up Trend": {
+      "meaning": "1 when Aroon Up >= 70; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "25 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Aroon Up": {
+      "meaning": "Recency of highest high",
+      "unit_scale": "points; Up/Down 0..100, oscillator -100..100",
+      "lookback_sessions": "25 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "ATR Bearish": {
+      "meaning": "1 when ATR buy-stop is present; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "ATR(21), multiplier 3; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "ATR Bullish": {
+      "meaning": "1 when ATR sell-stop is present; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "ATR(21), multiplier 3; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "ATR Percent 14D": {
+      "meaning": "EWM(true range, alpha=1/14, adjust=False, min_periods=14) / Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "14; recursive history and prior close",
+      "publication_lag_sessions": 0
+    },
+    "ATR Stop Distance Percent": {
+      "meaning": "(Close - ATR stop) / Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "ATR(21), multiplier 3; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Bear Power 80% Negatives": {
+      "meaning": "1 when at least 8 of previous 10 Bear Power observations are < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(13) plus prior 10 rows",
+      "publication_lag_sessions": 0
+    },
+    "Bear Power Percent": {
+      "meaning": "(Low - EMA13) / Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(13); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Bear Power Trend": {
+      "meaning": "1 when normalized least-squares slope of previous 10 Bear Power observations < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(13) plus prior 10-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Bollinger Overbought": {
+      "meaning": "1 when Close >= upper band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20, standard-deviation multiplier 2",
+      "publication_lag_sessions": 0
+    },
+    "Bollinger Oversold": {
+      "meaning": "1 when Close <= lower band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20, standard-deviation multiplier 2",
+      "publication_lag_sessions": 0
+    },
+    "Bollinger Percent B": {
+      "meaning": "(Close - lower band) / (upper band - lower band)",
+      "unit_scale": "dimensionless ratio; may be outside 0..1",
+      "lookback_sessions": "20, standard-deviation multiplier 2",
+      "publication_lag_sessions": 0
+    },
+    "Bollinger Width": {
+      "meaning": "(upper band - lower band) / centerline",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20, standard-deviation multiplier 2",
+      "publication_lag_sessions": 0
+    },
+    "Bull Power 80% Positives": {
+      "meaning": "1 when at least 8 of previous 10 Bull Power observations are > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(13) plus prior 10 rows",
+      "publication_lag_sessions": 0
+    },
+    "Bull Power Percent": {
+      "meaning": "(High - EMA13) / Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(13); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Bull Power Up Trend": {
+      "meaning": "1 when normalized least-squares slope of previous 10 Bull Power observations > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(13) plus prior 10-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Choppiness Index 14D": {
+      "meaning": "Choppiness index",
+      "unit_scale": "index points 0..100",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Close Location Value": {
+      "meaning": "(2*Close-Low-High)/(High-Low)",
+      "unit_scale": "dimensionless; usually -1..1",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Close to EMA 10D": {
+      "meaning": "(Close - EMA10) / EMA10",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(10); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Close to EMA 20D": {
+      "meaning": "(Close - EMA20) / EMA20",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(20); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Close to EMA 50D": {
+      "meaning": "(Close - EMA50) / EMA50",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(50); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Close to EMA 5D": {
+      "meaning": "(Close - EMA5) / EMA5",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(5); recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Close": {
+      "meaning": "Raw session close",
+      "unit_scale": "IDR per share",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "CMF Change 5D": {
+      "meaning": "CMF(t) - CMF(t-5)",
+      "unit_scale": "ratio difference",
+      "lookback_sessions": "20 plus 5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "CMF Value": {
+      "meaning": "Sum(money-flow multiplier * Volume,20) / sum(Volume,20)",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Crossover CMF": {
+      "meaning": "1 when CMF(t-1)*CMF(t) <= 0 (includes touching zero); 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; crossover adds previous observation",
+      "publication_lag_sessions": 0
+    },
+    "Directional Index Spread": {
+      "meaning": "Plus Directional Index - Minus Directional Index",
+      "unit_scale": "points",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Distance From 20D High": {
+      "meaning": "(Close - max(High,20)) / max(High,20)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Distance From 20D Low": {
+      "meaning": "(Close - min(Low,20)) / min(Low,20)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Distance From 60D High": {
+      "meaning": "(Close - max(High,60)) / max(High,60)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Distance From 60D Low": {
+      "meaning": "(Close - min(Low,60)) / min(Low,60)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Dollar Volume Ratio 20D": {
+      "meaning": "Close*Volume / mean(Close*Volume,20); local IDR traded-value proxy despite name",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Donchian Overbought": {
+      "meaning": "1 when Close >= upper band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Donchian Oversold": {
+      "meaning": "1 when Close <= lower band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Donchian Percent B": {
+      "meaning": "(Close - lower band) / (upper band - lower band)",
+      "unit_scale": "dimensionless ratio; may be outside 0..1",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Donchian Width": {
+      "meaning": "(upper band - lower band) / centerline",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "EMA 10D to 50D Spread": {
+      "meaning": "(EMA10-EMA50)/EMA50",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10/50 EMA; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "EMA 5D to 20D Spread": {
+      "meaning": "(EMA5-EMA20)/EMA20",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5/20 EMA; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Change 5D": {
+      "meaning": "Fisher(t) - Fisher(t-5)",
+      "unit_scale": "dimensionless transform units",
+      "lookback_sessions": "10; recursive smoothing; trigger adds 1 and change adds 5 rows",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Down Trend": {
+      "meaning": "1 when Fisher <= -2; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Reversal": {
+      "meaning": "1 when (Fisher >= trigger) differs from previous row; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "10 plus previous state",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Spread": {
+      "meaning": "Fisher - trigger",
+      "unit_scale": "dimensionless transform units",
+      "lookback_sessions": "10; recursive smoothing; trigger adds 1 and change adds 5 rows",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Transform Trigger": {
+      "meaning": "Previous Fisher value",
+      "unit_scale": "dimensionless transform units",
+      "lookback_sessions": "10; recursive smoothing; trigger adds 1 and change adds 5 rows",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Transform": {
+      "meaning": "Ehlers Fisher transform of price",
+      "unit_scale": "dimensionless transform units",
+      "lookback_sessions": "10; recursive smoothing; trigger adds 1 and change adds 5 rows",
+      "publication_lag_sessions": 0
+    },
+    "Fisher Up trend": {
+      "meaning": "1 when Fisher >= 2; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Foreign Accumulation Day Share 10D": {
+      "meaning": "mean(1[Foreign Buy > Foreign Sell],10)",
+      "unit_scale": "fraction 0..1",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Accumulation Day Share 20D": {
+      "meaning": "mean(1[Foreign Buy > Foreign Sell],20)",
+      "unit_scale": "fraction 0..1",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Accumulation Day Share 5D": {
+      "meaning": "mean(1[Foreign Buy > Foreign Sell],5)",
+      "unit_scale": "fraction 0..1",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Accumulation Day Share 60D": {
+      "meaning": "mean(1[Foreign Buy > Foreign Sell],60)",
+      "unit_scale": "fraction 0..1",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Buy Share 10D": {
+      "meaning": "sum(Foreign Buy) / sum(Volume) over 10 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Buy Share 1D": {
+      "meaning": "sum(Foreign Buy) / sum(Volume) over 1 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Buy Share 20D": {
+      "meaning": "sum(Foreign Buy) / sum(Volume) over 20 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Buy Share 5D": {
+      "meaning": "sum(Foreign Buy) / sum(Volume) over 5 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Buy Share 60D": {
+      "meaning": "sum(Foreign Buy) / sum(Volume) over 60 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Flow Price Divergence 20D": {
+      "meaning": "zscore(Net Intensity 1D,20) - zscore(log return 1D,20)",
+      "unit_scale": "standard-deviation difference",
+      "lookback_sessions": "20 plus prior close",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Flow Price Divergence 60D": {
+      "meaning": "zscore(Net Intensity 1D,60) - zscore(log return 1D,60)",
+      "unit_scale": "standard-deviation difference",
+      "lookback_sessions": "60 plus prior close",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Flow Return Correlation 20D": {
+      "meaning": "corr(Net Intensity 1D, log return 1D,20)",
+      "unit_scale": "correlation -1..1",
+      "lookback_sessions": "20 plus prior close",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Flow Return Correlation 60D": {
+      "meaning": "corr(Net Intensity 1D, log return 1D,60)",
+      "unit_scale": "correlation -1..1",
+      "lookback_sessions": "60 plus prior close",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Flow Signed Log": {
+      "meaning": "sign(net) * log(1+abs(net)), net=Foreign Buy-Foreign Sell",
+      "unit_scale": "signed natural-log volume",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Flow ZScore 10D": {
+      "meaning": "zscore(Foreign Buy - Foreign Sell,10)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Flow ZScore 20D": {
+      "meaning": "zscore(Foreign Buy - Foreign Sell,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Flow ZScore 5D": {
+      "meaning": "zscore(Foreign Buy - Foreign Sell,5)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Flow ZScore 60D": {
+      "meaning": "zscore(Foreign Buy - Foreign Sell,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity 10D": {
+      "meaning": "sum(Foreign Buy - Foreign Sell) / sum(Volume) over 10 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity 1D": {
+      "meaning": "sum(Foreign Buy - Foreign Sell) / sum(Volume) over 1 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity 20D": {
+      "meaning": "sum(Foreign Buy - Foreign Sell) / sum(Volume) over 20 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity 5D": {
+      "meaning": "sum(Foreign Buy - Foreign Sell) / sum(Volume) over 5 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity 60D": {
+      "meaning": "sum(Foreign Buy - Foreign Sell) / sum(Volume) over 60 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity Acceleration 5D": {
+      "meaning": "Net Intensity(t) - 2*Net Intensity(t-5) + Net Intensity(t-10)",
+      "unit_scale": "ratio difference",
+      "lookback_sessions": "10-row second difference",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Intensity EMA 5D Minus 20D": {
+      "meaning": "EMA5(Net Intensity 1D) - EMA20(Net Intensity 1D)",
+      "unit_scale": "ratio difference",
+      "lookback_sessions": "5/20 EMA; recursive history",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Value Intensity 10D": {
+      "meaning": "sum(typical_price*(Foreign Buy-Foreign Sell),10) / sum(typical_price*Volume,10)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Value Intensity 20D": {
+      "meaning": "sum(typical_price*(Foreign Buy-Foreign Sell),20) / sum(typical_price*Volume,20)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Value Intensity 5D": {
+      "meaning": "sum(typical_price*(Foreign Buy-Foreign Sell),5) / sum(typical_price*Volume,5)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Net Value Intensity 60D": {
+      "meaning": "sum(typical_price*(Foreign Buy-Foreign Sell),60) / sum(typical_price*Volume,60)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Participation 10D": {
+      "meaning": "sum(Foreign Buy + Foreign Sell) / (2*sum(Volume)) over 10 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Participation 1D": {
+      "meaning": "sum(Foreign Buy + Foreign Sell) / (2*sum(Volume)) over 1 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Participation 20D": {
+      "meaning": "sum(Foreign Buy + Foreign Sell) / (2*sum(Volume)) over 20 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Participation 5D": {
+      "meaning": "sum(Foreign Buy + Foreign Sell) / (2*sum(Volume)) over 5 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Participation 60D": {
+      "meaning": "sum(Foreign Buy + Foreign Sell) / (2*sum(Volume)) over 60 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Sell Share 10D": {
+      "meaning": "sum(Foreign Sell) / sum(Volume) over 10 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "10 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Sell Share 1D": {
+      "meaning": "sum(Foreign Sell) / sum(Volume) over 1 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Sell Share 20D": {
+      "meaning": "sum(Foreign Sell) / sum(Volume) over 20 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Sell Share 5D": {
+      "meaning": "sum(Foreign Sell) / sum(Volume) over 5 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Foreign Sell Share 60D": {
+      "meaning": "sum(Foreign Sell) / sum(Volume) over 60 observations",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "High Low Range Percent": {
+      "meaning": "(High-Low)/Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "High": {
+      "meaning": "Raw session high",
+      "unit_scale": "IDR per share",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Hurst Exponent 100D": {
+      "meaning": "Estimated price-series persistence exponent",
+      "unit_scale": "dimensionless exponent",
+      "lookback_sessions": "100 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Intraday Return Percent": {
+      "meaning": "(Close-Open)/Open",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Keltner Overbought": {
+      "meaning": "1 when Close >= upper band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Keltner Oversold": {
+      "meaning": "1 when Close <= lower band; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Keltner Percent B": {
+      "meaning": "(Close - lower band) / (upper band - lower band)",
+      "unit_scale": "dimensionless ratio; may be outside 0..1",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Keltner Width": {
+      "meaning": "(upper band - lower band) / centerline",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Log Return 10D": {
+      "meaning": "log(Close(t)) - log(Close(t-10))",
+      "unit_scale": "natural-log return",
+      "lookback_sessions": "10-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Log Return 1D": {
+      "meaning": "log(Close(t)) - log(Close(t-1))",
+      "unit_scale": "natural-log return",
+      "lookback_sessions": "1-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Log Return 20D": {
+      "meaning": "log(Close(t)) - log(Close(t-20))",
+      "unit_scale": "natural-log return",
+      "lookback_sessions": "20-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Log Return 3D": {
+      "meaning": "log(Close(t)) - log(Close(t-3))",
+      "unit_scale": "natural-log return",
+      "lookback_sessions": "3-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Log Return 5D": {
+      "meaning": "log(Close(t)) - log(Close(t-5))",
+      "unit_scale": "natural-log return",
+      "lookback_sessions": "5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Low": {
+      "meaning": "Raw session low",
+      "unit_scale": "IDR per share",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "MACD Histogram Change 5D": {
+      "meaning": "MACD Histogram Percent(t) - MACD Histogram Percent(t-5)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "12/26/9 EMA; change adds 5-row difference; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "MACD Histogram Percent": {
+      "meaning": "(raw MACD - raw signal) / EMA26",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "12/26/9 EMA; change adds 5-row difference; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "MACD Near 0": {
+      "meaning": "1 when absolute raw histogram < threshold; threshold is median absolute raw MACD histogram over last 50 rows, min 10, falling back to expanding median; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "12/26/9 EMA plus 50-row rolling/expanding threshold",
+      "publication_lag_sessions": 0
+    },
+    "MACD Non-Near 0 Negative": {
+      "meaning": "1 when raw histogram <= -threshold; threshold is median absolute raw MACD histogram over last 50 rows, min 10, falling back to expanding median; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "12/26/9 EMA plus 50-row rolling/expanding threshold",
+      "publication_lag_sessions": 0
+    },
+    "MACD Non-Near 0 Positive": {
+      "meaning": "1 when raw histogram >= threshold; threshold is median absolute raw MACD histogram over last 50 rows, min 10, falling back to expanding median; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "12/26/9 EMA plus 50-row rolling/expanding threshold",
+      "publication_lag_sessions": 0
+    },
+    "MACD Percent": {
+      "meaning": "(EMA12 - EMA26) / EMA26",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "12/26/9 EMA; change adds 5-row difference; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "MACD Signal Percent": {
+      "meaning": "EMA9 of raw MACD / EMA26",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "12/26/9 EMA; change adds 5-row difference; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "MFI Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 MFI observations < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "MFI(14) plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "MFI Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 MFI observations > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "MFI(14) plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "MFI Overbought": {
+      "meaning": "1 when MFI >= 80; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "MFI Oversold": {
+      "meaning": "1 when MFI <= 20; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "MFI Value": {
+      "meaning": "Typical-price money-flow index",
+      "unit_scale": "points 0..100",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Minus Directional Index": {
+      "meaning": "Negative directional movement index",
+      "unit_scale": "index points",
+      "lookback_sessions": "14; recursive smoothing (ADXR also prior ADX)",
+      "publication_lag_sessions": 0
+    },
+    "Negative CMF": {
+      "meaning": "1 when CMF <= 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; crossover adds previous observation",
+      "publication_lag_sessions": 0
+    },
+    "Non Regular Average Trade Value 1D": {
+      "meaning": "Non Regular Value / Non Regular Frequency",
+      "unit_scale": "IDR per trade",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Average Trade Volume 1D": {
+      "meaning": "Non Regular Volume / Non Regular Frequency",
+      "unit_scale": "shares per trade",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Block Activity": {
+      "meaning": "1 when Non Regular Volume ZScore 20D > 2; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Frequency ZScore 20D": {
+      "meaning": "zscore(Non Regular Frequency,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Frequency ZScore 5D": {
+      "meaning": "zscore(Non Regular Frequency,5)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Frequency ZScore 60D": {
+      "meaning": "zscore(Non Regular Frequency,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value Share 1D": {
+      "meaning": "sum(Non Regular Value,1) / sum(typical_price*Volume,1)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value Share 20D": {
+      "meaning": "sum(Non Regular Value,20) / sum(typical_price*Volume,20)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value Share 5D": {
+      "meaning": "sum(Non Regular Value,5) / sum(typical_price*Volume,5)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value Share 60D": {
+      "meaning": "sum(Non Regular Value,60) / sum(typical_price*Volume,60)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value ZScore 20D": {
+      "meaning": "zscore(Non Regular Value,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value ZScore 5D": {
+      "meaning": "zscore(Non Regular Value,5)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Value ZScore 60D": {
+      "meaning": "zscore(Non Regular Value,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume Share 1D": {
+      "meaning": "sum(Non Regular Volume,1) / sum(Volume,1)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume Share 20D": {
+      "meaning": "sum(Non Regular Volume,20) / sum(Volume,20)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume Share 5D": {
+      "meaning": "sum(Non Regular Volume,5) / sum(Volume,5)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume Share 60D": {
+      "meaning": "sum(Non Regular Volume,60) / sum(Volume,60)",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume ZScore 20D": {
+      "meaning": "zscore(Non Regular Volume,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume ZScore 5D": {
+      "meaning": "zscore(Non Regular Volume,5)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "5 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "Non Regular Volume ZScore 60D": {
+      "meaning": "zscore(Non Regular Volume,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 1
+    },
+    "OBV Change 5D Normalized": {
+      "meaning": "(OBV(t)-OBV(t-5)) / mean(abs(OBV),20)",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "cumulative history plus 20 rows and 5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "OBV to MA20 Ratio": {
+      "meaning": "OBV / mean(OBV,20)",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "cumulative history plus 20 rows",
+      "publication_lag_sessions": 0
+    },
+    "On Balance Volume Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 cumulative OBV observations < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "cumulative history plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "On Balance Volume Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 cumulative OBV observations > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "cumulative history plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Open Gap Percent": {
+      "meaning": "(Open-previous Close)/previous Close",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "2 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Open": {
+      "meaning": "Raw session open",
+      "unit_scale": "IDR per share",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Plus Directional Index": {
+      "meaning": "Positive directional movement index",
+      "unit_scale": "index points",
+      "lookback_sessions": "14; recursive smoothing (ADXR also prior ADX)",
+      "publication_lag_sessions": 0
+    },
+    "Positive CMF": {
+      "meaning": "1 when CMF > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; crossover adds previous observation",
+      "publication_lag_sessions": 0
+    },
+    "Positive Direction": {
+      "meaning": "1 when Plus Directional Index > Minus Directional Index; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Price Momentum 10D": {
+      "meaning": "Close(t)/Close(t-10) - 1",
+      "unit_scale": "decimal return",
+      "lookback_sessions": "10-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Price Momentum 20D": {
+      "meaning": "Close(t)/Close(t-20) - 1",
+      "unit_scale": "decimal return",
+      "lookback_sessions": "20-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Price Momentum 5D": {
+      "meaning": "Close(t)/Close(t-5) - 1",
+      "unit_scale": "decimal return",
+      "lookback_sessions": "5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Price Volume Divergence 20D": {
+      "meaning": "Log Return 5D * Volume ZScore 20D",
+      "unit_scale": "log return times standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Price ZScore 20D": {
+      "meaning": "(Close - mean(Close,20)) / population std(Close,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Price ZScore 60D": {
+      "meaning": "(Close - mean(Close,60)) / population std(Close,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "PVO Histogram Change 5D": {
+      "meaning": "Histogram(t) - Histogram(t-5)",
+      "unit_scale": "percentage points (2 means 2%)",
+      "lookback_sessions": "12/26/9 EMA; change adds 5 rows; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "PVO Histogram": {
+      "meaning": "PVO - signal",
+      "unit_scale": "percentage points (2 means 2%)",
+      "lookback_sessions": "12/26/9 EMA; change adds 5 rows; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "PVO Positive": {
+      "meaning": "1 when PVO > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "12/26/9 EMA; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "PVO Signal": {
+      "meaning": "EMA9 of PVO",
+      "unit_scale": "percentage points (2 means 2%)",
+      "lookback_sessions": "12/26/9 EMA; change adds 5 rows; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "PVO Value": {
+      "meaning": "100*(EMA12(Volume)-EMA26(Volume))/EMA26(Volume)",
+      "unit_scale": "percentage points (2 means 2%)",
+      "lookback_sessions": "12/26/9 EMA; change adds 5 rows; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "Realized Volatility 20D": {
+      "meaning": "population std(log return 1D,20) * sqrt(252)",
+      "unit_scale": "annualized decimal volatility",
+      "lookback_sessions": "20 returns plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Realized Volatility 5D": {
+      "meaning": "population std(log return 1D,5) * sqrt(252)",
+      "unit_scale": "annualized decimal volatility",
+      "lookback_sessions": "5 returns plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Realized Volatility 60D": {
+      "meaning": "population std(log return 1D,60) * sqrt(252)",
+      "unit_scale": "annualized decimal volatility",
+      "lookback_sessions": "60 returns plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Regime Choppy": {
+      "meaning": "1 when Choppiness > 61.8; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Regime Mean Reverting": {
+      "meaning": "1 when Hurst < 0.45; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "100 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Regime Persistent": {
+      "meaning": "1 when Hurst > 0.55; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "100 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Regime Trending": {
+      "meaning": "1 when Choppiness < 38.2; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Return Volume Correlation 20D": {
+      "meaning": "corr(log return 1D, Volume change 1D,20)",
+      "unit_scale": "correlation -1..1",
+      "lookback_sessions": "20 plus prior observation",
+      "publication_lag_sessions": 0
+    },
+    "Return Volume Correlation 60D": {
+      "meaning": "corr(log return 1D, Volume change 1D,60)",
+      "unit_scale": "correlation -1..1",
+      "lookback_sessions": "60 plus prior observation",
+      "publication_lag_sessions": 0
+    },
+    "RSI 21": {
+      "meaning": "21-period relative strength index",
+      "unit_scale": "points 0..100",
+      "lookback_sessions": "21; recursive smoothing",
+      "publication_lag_sessions": 0
+    },
+    "RSI 7 Minus 21": {
+      "meaning": "RSI7 - RSI21",
+      "unit_scale": "RSI points",
+      "lookback_sessions": "7 and 21; recursive smoothing",
+      "publication_lag_sessions": 0
+    },
+    "RSI 7": {
+      "meaning": "7-period relative strength index",
+      "unit_scale": "points 0..100",
+      "lookback_sessions": "7; recursive smoothing",
+      "publication_lag_sessions": 0
+    },
+    "RSI Down Trend": {
+      "meaning": "1 when RSI <= 35; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "RSI Rate of Change 10": {
+      "meaning": "RSI(t) - RSI(t-10); not percentage change",
+      "unit_scale": "RSI points",
+      "lookback_sessions": "RSI(14) plus 10-row difference",
+      "publication_lag_sessions": 0
+    },
+    "RSI Rate of Change 5": {
+      "meaning": "RSI(t) - RSI(t-5); not percentage change",
+      "unit_scale": "RSI points",
+      "lookback_sessions": "RSI(14) plus 5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "RSI Up Trend": {
+      "meaning": "1 when RSI >= 65; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "RSI Value": {
+      "meaning": "Relative strength index",
+      "unit_scale": "points 0..100",
+      "lookback_sessions": "14; recursive smoothing",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic D Value": {
+      "meaning": "Stochastic D signal",
+      "unit_scale": "points; K/D 0..100; J and spread may exceed that range",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic J": {
+      "meaning": "3*K - 2*D",
+      "unit_scale": "points; K/D 0..100; J and spread may exceed that range",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic K Minus D": {
+      "meaning": "K - D",
+      "unit_scale": "points; K/D 0..100; J and spread may exceed that range",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic K Value": {
+      "meaning": "Smoothed stochastic K oscillator",
+      "unit_scale": "points; K/D 0..100; J and spread may exceed that range",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic Oscillator Overbought": {
+      "meaning": "1 when K >= 80; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Stochastic Oscillator Oversold": {
+      "meaning": "1 when K <= 20; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14/3/3",
+      "publication_lag_sessions": 0
+    },
+    "Strong Negative CMF": {
+      "meaning": "1 when CMF <= -0.25; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; crossover adds previous observation",
+      "publication_lag_sessions": 0
+    },
+    "Strong Positive CMF": {
+      "meaning": "1 when CMF >= 0.25; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; crossover adds previous observation",
+      "publication_lag_sessions": 0
+    },
+    "SuperTrend Bearish": {
+      "meaning": "1 when SuperTrend upper band is present; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "ATR(10), multiplier 3; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "SuperTrend Bullish": {
+      "meaning": "1 when SuperTrend lower band is present; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "ATR(10), multiplier 3; recursive history",
+      "publication_lag_sessions": 0
+    },
+    "SuperTrend Change": {
+      "meaning": "1 when Bullish flag changes from previous row (initial diff filled with 0); 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "ATR(10) plus previous state",
+      "publication_lag_sessions": 0
+    },
+    "Up Volume Share 20D": {
+      "meaning": "sum(Volume where Close > previous Close,20) / sum(Volume,20)",
+      "unit_scale": "fraction 0..1",
+      "lookback_sessions": "20 plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Volatility 20D to 60D Ratio": {
+      "meaning": "Realized Volatility 20D / Realized Volatility 60D",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "60 returns plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Volatility 5D to 20D Ratio": {
+      "meaning": "Realized Volatility 5D / Realized Volatility 20D",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "20 returns plus prior close",
+      "publication_lag_sessions": 0
+    },
+    "Volume Change 1D": {
+      "meaning": "Volume(t)/Volume(t-1) - 1",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "1-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Volume Change 5D": {
+      "meaning": "Volume(t)/Volume(t-5) - 1",
+      "unit_scale": "decimal ratio",
+      "lookback_sessions": "5-row difference",
+      "publication_lag_sessions": 0
+    },
+    "Volume Ratio 20D": {
+      "meaning": "Volume / mean(Volume,20)",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Volume ZScore 20D": {
+      "meaning": "zscore(Volume,20)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "20 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Volume ZScore 60D": {
+      "meaning": "zscore(Volume,60)",
+      "unit_scale": "standard deviations",
+      "lookback_sessions": "60 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Volume": {
+      "meaning": "Raw session volume",
+      "unit_scale": "shares",
+      "lookback_sessions": "1 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Vortex Negative": {
+      "meaning": "Negative Vortex movement / summed true range",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Vortex Positive Direction": {
+      "meaning": "1 when Vortex Spread > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Vortex Positive": {
+      "meaning": "Positive Vortex movement / summed true range",
+      "unit_scale": "dimensionless ratio",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Vortex Spread": {
+      "meaning": "Vortex Positive - Vortex Negative",
+      "unit_scale": "ratio difference",
+      "lookback_sessions": "14 trading observation(s)",
+      "publication_lag_sessions": 0
+    },
+    "Width Bollinger Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20, standard-deviation multiplier 2; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Width Bollinger Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20, standard-deviation multiplier 2; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Width Donchian Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Width Donchian Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "20; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Width Keltner Decreasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths < 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    },
+    "Width Keltner Increasing": {
+      "meaning": "1 when normalized least-squares slope of previous 5 widths > 0; 0 otherwise. Generator comparisons can yield 0 during underlying warmup.",
+      "unit_scale": "binary 0/1",
+      "lookback_sessions": "EMA(20), ATR(10), multiplier 2; recursive history; plus prior 5-row slope",
+      "publication_lag_sessions": 0
+    }
+  }
+}

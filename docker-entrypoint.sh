@@ -9,9 +9,19 @@ set -eu
 : "${ORGANIZER_BASE_URL:=http://localhost:8000}"
 : "${MINIMUM_SCORE:=0.5}"
 
-mkdir -p /root/.codex
-if [ -d /host-codex ] && [ ! -e /root/.codex/config.toml ]; then
-    cp -R /host-codex/. /root/.codex/
+# File-backed credentials are portable; macOS keychain entries are not.
+: "${CODEX_HOME:=/root/.codex}"
+export CODEX_HOME
+# codex exec supports CODEX_API_KEY directly; keep OPENAI_API_KEY compatibility.
+if [ -n "${OPENAI_API_KEY:-}" ] && [ -z "${CODEX_API_KEY:-}" ]; then
+    CODEX_API_KEY=$OPENAI_API_KEY
+    export CODEX_API_KEY
+fi
+mkdir -p "$CODEX_HOME"
+if [ ! -e "$CODEX_HOME/auth.json" ] && [ -f /host-codex/auth.json ]; then
+    umask 077
+    cp /host-codex/auth.json "$CODEX_HOME/auth.json"
+    chmod 600 "$CODEX_HOME/auth.json"
 fi
 
 cat > /app/.env <<EOF

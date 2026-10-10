@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -70,9 +71,29 @@ def build_api_url(
     )
 
 
-def build_technical_url(base_url: str, ticker: str) -> str:
-    """Add the ticker query parameter to the technical-data URL."""
-    return build_api_url(base_url, "technical", [("ticker", ticker)])
+def normalize_technical_ticker(ticker: str) -> str:
+    """Validate four ASCII letters before uppercase normalization."""
+    if not isinstance(ticker, str) or not re.fullmatch(r"[A-Za-z]{4}", ticker.strip()):
+        raise ValueError("Technical ticker must contain four ASCII letters")
+    return ticker.strip().upper()
+
+
+def build_technical_url(base_url: str, ticker: str, forecast_type: str) -> str:
+    """Build the canonical v2 route without duplicate identity parameters."""
+    ticker = normalize_technical_ticker(ticker)
+    if forecast_type not in {"5dd", "10dd"}:
+        raise ValueError("Forecast type must be 5dd or 10dd")
+    parsed_base = urllib.parse.urlsplit(base_url.strip())
+    # Accessing port validates malformed/non-numeric ports before HTTPX sees them.
+    parsed_base.port
+    if parsed_base.username is not None or parsed_base.password is not None:
+        raise ValueError("Technical base URL must not embed credentials")
+    if any(key in {"ticker", "forecast_type"} for key, _ in
+           urllib.parse.parse_qsl(parsed_base.query, keep_blank_values=True)):
+        raise ValueError("Base URL must not contain technical identity parameters")
+    url = build_api_url(base_url, "technical", [("ticker", ticker), ("forecast_type", forecast_type)])
+    parsed = urllib.parse.urlsplit(url)
+    return urllib.parse.urlunsplit(parsed._replace(path=parsed.path + "/", fragment=""))
 
 
 def fetch_json(url: str, timeout: float) -> Any:

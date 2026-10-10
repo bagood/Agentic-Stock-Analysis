@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import call, patch
+from unittest.mock import ANY
 
 import run_detailed_analysis as runner
 
@@ -19,6 +20,10 @@ from run_detailed_analysis import (
 
 
 class SelectPositiveTickersTests(unittest.TestCase):
+    def test_rejects_unicode_before_uppercase_can_expand_it(self) -> None:
+        with self.assertRaises(ValueError):
+            parse_scored_recommendations({"recommendations": [{"ticker": "ßaa", "score": .9}]})
+
     def test_falls_back_to_top_four_when_only_two_clear_minimum(self) -> None:
         payload = {
             "score_date": "2026-08-07",
@@ -180,6 +185,10 @@ class SelectWindowRecommendationsTests(unittest.TestCase):
 
 
 class SelectStockTickersTests(unittest.TestCase):
+    def test_rejects_unicode_before_uppercase_can_expand_it(self) -> None:
+        with self.assertRaises(ValueError):
+            select_stock_tickers(["ßaa"], "5dd")
+
     def test_accepts_stocks_object_and_deduplicates_tickers(self) -> None:
         selected = select_stock_tickers(
             {
@@ -240,6 +249,10 @@ class OutputDirectoryTests(unittest.TestCase):
 
 
 class ForecastArgumentTests(unittest.TestCase):
+    def setUp(self):
+        self.preflight = patch.object(runner, "preflight").start()
+        self.addCleanup(patch.stopall)
+
     def test_defaults_to_ten_sessions(self) -> None:
         self.assertEqual(parse_args([]).forecast_window, "10")
 
@@ -365,6 +378,9 @@ class ForecastArgumentTests(unittest.TestCase):
                             "https://data.example.test/",
                             f"/tmp/detailedAnalysisResults/{rolling_window}",
                             12.0,
+                            forecast_type=rolling_window,
+                            technical_config=ANY,
+                            _preflight=ANY,
                         )
                         for ticker in (
                             "BBCA" if rolling_window == "5dd" else "BMRI",
@@ -372,6 +388,47 @@ class ForecastArgumentTests(unittest.TestCase):
                         )
                     ],
                 )
+
+
+class BatchFailureTests(unittest.TestCase):
+    def setUp(self):
+        self.preflight = patch.object(runner, "preflight").start()
+        self.addCleanup(patch.stopall)
+
+    def run_batch(self, recommendations, stocks, outcomes):
+        with patch.dict(os.environ, {
+            "ML_BASE_URL": "https://data.example.test", "DETAILED_ANALYSIS_RESULT": "unused",
+            "MINIMUM_SCORE": "0.5", "ORGANIZER_BASE_URL": "https://organizer.example.test",
+        }, clear=True), patch.object(runner, "load_env"), patch.object(
+            runner, "prepare_output_dir", return_value=Path("/tmp/unused/5dd")
+        ), patch.object(runner, "fetch_json", side_effect=[recommendations, {"recommendations": []}, stocks]), patch.object(
+            runner, "run_detailed_analysis", side_effect=outcomes
+        ) as analyze:
+            result = runner.main("5")
+        return result, analyze
+
+    def test_failed_ticker_does_not_stop_batch_or_return_success(self):
+        result, analyze = self.run_batch(
+            {"recommendations": [{"ticker": "AALI", "score": .9}, {"ticker": "BBCA", "score": .8}]},
+            {"stocks": ["TLKM"]}, [1, 0, 0],
+        )
+        self.assertEqual(result, 1)
+        self.assertEqual([call.args[0] for call in analyze.call_args_list], ["AALI", "BBCA", "TLKM"])
+        self.assertTrue(all(call.kwargs["forecast_type"] == "5dd" for call in analyze.call_args_list))
+        self.assertIs(analyze.call_args_list[0].kwargs["technical_config"], analyze.call_args_list[-1].kwargs["technical_config"])
+
+    def test_empty_ticker_list_succeeds_without_running_analysis(self):
+        result, analyze = self.run_batch({"recommendations": []}, {"stocks": []}, [])
+        self.assertEqual(result, 0)
+        analyze.assert_not_called()
+
+    def test_bad_client_configuration_fails_before_network_or_directory_cleanup(self):
+        with patch.dict(os.environ, {"TECHNICAL_API_TIMEOUT_SECONDS": "nan"}, clear=True), patch.object(
+            runner, "load_env"
+        ), patch.object(runner, "fetch_json") as fetch, patch.object(runner, "prepare_output_dir") as prepare:
+            self.assertEqual(runner.main("5"), 1)
+        fetch.assert_not_called()
+        prepare.assert_not_called()
 
 
 if __name__ == "__main__":

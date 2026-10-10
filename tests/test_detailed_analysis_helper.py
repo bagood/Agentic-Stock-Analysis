@@ -36,8 +36,23 @@ class ApiUrlTests(unittest.TestCase):
 
     def test_builds_technical_url_without_double_slashes(self) -> None:
         self.assertEqual(
-            build_technical_url("http://localhost:8000/", "TLKM"),
-            "http://localhost:8000/technical?ticker=TLKM",
+            build_technical_url("http://localhost:8000/", "TLKM", "5dd"),
+            "http://localhost:8000/technical/?ticker=TLKM&forecast_type=5dd",
+        )
+
+    def test_technical_identity_cannot_be_duplicated_in_base_url(self) -> None:
+        for query in ("ticker=BBCA", "forecast_type=10dd", "%74icker=BBCA"):
+            with self.assertRaises(ValueError):
+                build_technical_url(f"https://data.example.test?{query}", "AALI", "5dd")
+
+    def test_technical_base_url_must_not_embed_credentials(self) -> None:
+        with self.assertRaises(ValueError):
+            build_technical_url("https://user:secret@data.example.test", "AALI", "5dd")
+
+    def test_technical_url_retains_base_path_and_unrelated_query(self) -> None:
+        self.assertEqual(
+            build_technical_url("https://data.example.test/api/?market=idx", " aali ", "10dd"),
+            "https://data.example.test/api/technical/?market=idx&ticker=AALI&forecast_type=10dd",
         )
 
     def test_rejects_non_http_base_url(self) -> None:
