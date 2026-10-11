@@ -1,0 +1,10 @@
+# Load on the Docker daemon's Ubuntu/AppArmor 4 host before using the override.
+# Compatibility profile: broad default permissions, explicit userns permission.
+# This is not a restrictive filesystem/network AppArmor policy. Docker seccomp,
+# capability limits, and the nested Codex read-only sandbox still apply.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile agentic-stock-analysis-userns flags=(default_allow) {
+    userns,
+}

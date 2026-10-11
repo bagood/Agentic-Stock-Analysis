@@ -1,0 +1,6 @@
+# Requires docker/analysis-apparmor-userns loaded on the Docker daemon host.
+# Use with docker-compose.yml, instead of the apparmor-diagnostic override.
+services:
+  agentic-stock-analysis:
+    security_opt:
+      - apparmor=agentic-stock-analysis-userns

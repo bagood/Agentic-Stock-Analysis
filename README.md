@@ -642,6 +642,54 @@ systemd-detect-virt
 The override cannot bypass an outer container runtime or provider's restrictions.
 An orphan-container warning is unrelated to sandbox initialization.
 
+On Ubuntu, `apparmor=unconfined` does not necessarily exempt a process from
+`kernel.apparmor_restrict_unprivileged_userns=1`. Enabled user namespaces plus
+`unshare: write failed /proc/self/uid_map: Operation not permitted`,
+`bwrap: setting up uid map: Permission denied`, or a loopback `RTM_NEWADDR`
+denial point to restrictions on capabilities inside the new namespace.
+Confirm AppArmor denials using the host kernel logs above. Ubuntu supports a
+named profile with explicit `userns` permission; see
+[Ubuntu's user-namespace policy explanation](https://discourse.ubuntu.com/t/understanding-apparmor-user-namespace-restriction/58007).
+
+The checked-in compatibility profile uses AppArmor 4 syntax and broad
+`default_allow` permissions with explicit `userns` permission. It scopes the
+exception to containers assigned this profile; it is not a restrictive AppArmor
+filesystem or network policy. It does not add Docker capabilities or turn off
+seccomp or Codex sandboxing, and does not change the host-wide sysctl.
+Install and load it on the **Docker daemon host**, from the project directory:
+
+```bash
+sudo install -m 0644 docker/analysis-apparmor-userns \
+  /etc/apparmor.d/agentic-stock-analysis-userns
+sudo apparmor_parser -r /etc/apparmor.d/agentic-stock-analysis-userns
+sudo docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.apparmor-userns.yml \
+  run --rm --no-deps agentic-stock-analysis \
+  python -m detailedAnalysis.preflight --forecast-window 10
+```
+
+Use this override **instead of** `docker-compose.apparmor-diagnostic.yml`;
+do not combine conflicting AppArmor options. If preflight passes, run:
+
+```bash
+sudo docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.apparmor-userns.yml \
+  run --rm --no-deps agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 10
+```
+
+No rebuild is required for this host-profile/Compose change. If loading the
+profile or preflight fails, retain the error and inspect the host logs; the
+profile must be validated on the target host. To remove it, first stop containers
+using it, then unload and remove the profile:
+
+```bash
+sudo apparmor_parser -R /etc/apparmor.d/agentic-stock-analysis-userns
+sudo rm /etc/apparmor.d/agentic-stock-analysis-userns
+```
+
 Controlled AALI real-report verification passed for both horizons with the
 existing authenticated volume and its stale `localhost:8003/mcp` configuration:
 
