@@ -610,6 +610,35 @@ sudo journalctl -k --since "10 minutes ago" --no-pager |
   grep -Ei 'apparmor|denied|bwrap|userns|seccomp'
 ```
 
+Also collect the model-free container diagnostics, rebuilding first to include
+the diagnostic module:
+
+```bash
+sudo docker compose -f docker-compose.yml build agentic-stock-analysis
+sudo docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.apparmor-diagnostic.yml \
+  run --rm --no-deps agentic-stock-analysis \
+  python -m detailedAnalysis.sandbox_diagnostics
+```
+
+The JSON output includes the process AppArmor profile, seccomp filter count,
+effective capabilities, namespace sysctls, and bounded stdout/stderr from static
+version, user-namespace, bubblewrap, and Codex sandbox probes. It prints no
+environment variables, invokes no model, and does not clear reports. Exit status
+is nonzero when the Codex sandbox smoke command fails. This is a runtime
+diagnostic; a passing smoke command does not replace the reference preflight.
+
+If the process profile is still confined, verify that the deployed override is
+being applied. If it is `unconfined` but mounting still fails, inspect host logs
+and the Docker daemon's security options rather than assuming AppArmor was the
+only blocker:
+
+```bash
+sudo docker info --format '{{json .SecurityOptions}}'
+systemd-detect-virt
+```
+
 The override cannot bypass an outer container runtime or provider's restrictions.
 An orphan-container warning is unrelated to sandbox initialization.
 

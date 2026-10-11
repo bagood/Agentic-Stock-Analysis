@@ -47,7 +47,7 @@ def preflight(project: Path, instructions: Path, *, executable="codex") -> Prefl
         except CodexExecutionError as exc:
             raise CodexExecutionError(f"Preflight sandbox check failed: {exc}") from exc
     if code:
-        raise CodexExecutionError(f"Preflight sandbox check failed (exit {code}): {diagnostic(stderr)}. Run python -m detailedAnalysis.preflight inside the analysis service; verify bubblewrap and Linux seccomp/user-namespace policy. Reports were not cleared.")
+        raise CodexExecutionError(f"Preflight sandbox check failed (exit {code}): {diagnostic(stderr)}. Run python -m detailedAnalysis.sandbox_diagnostics inside the analysis service to inspect runtime policy and model-free sandbox errors. Reports were not cleared.")
     return PreflightResult(project, instructions, generation_timeout)
 
 
