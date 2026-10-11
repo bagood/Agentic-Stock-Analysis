@@ -569,6 +569,50 @@ On an unsupported runtime, preflight still returns nonzero before clearing
 reports or requesting data. Do not switch to danger-full-access or change macOS
 sysctls to work around Linux namespace failure. Other hosts may need a host
 AppArmor profile; investigate the Linux host's policy separately.
+
+For a Linux server reporting `bwrap: Failed to make / slave: Permission denied`,
+AppArmor may be blocking bubblewrap's mount setup even with the seccomp and
+system-path settings above. Test the checked-in, analysis-only override:
+
+```bash
+sudo docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.apparmor-diagnostic.yml \
+  run --rm --no-deps agentic-stock-analysis \
+  python -m detailedAnalysis.preflight --forecast-window 10
+```
+
+`docker compose run` does not accept `--security-opt`; runtime security settings
+must be declared in the Compose configuration. This override disables AppArmor
+confinement for the analysis container, increasing its access beyond the default
+AppArmor policy. The custom seccomp profile and Codex read-only sandbox remain
+enabled. API and assistant services are unaffected. For a stricter permanent
+deployment, use a host-loaded custom AppArmor profile allowing the required
+sandbox operations; see [Docker's AppArmor documentation](https://docs.docker.com/engine/security/apparmor/).
+
+If preflight passes, run the batch using the same override:
+
+```bash
+sudo docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.apparmor-diagnostic.yml \
+  run --rm --no-deps agentic-stock-analysis \
+  python run_detailed_analysis.py --forecast-window 10
+```
+
+Use `--forecast-window 5` to check or run the other horizon. New containers pick
+up the override without an image rebuild or Docker daemon restart. Omitting the
+override file restores the base Compose AppArmor behavior for subsequent runs.
+If preflight still fails, inspect policy denials on the Docker host:
+
+```bash
+sudo journalctl -k --since "10 minutes ago" --no-pager |
+  grep -Ei 'apparmor|denied|bwrap|userns|seccomp'
+```
+
+The override cannot bypass an outer container runtime or provider's restrictions.
+An orphan-container warning is unrelated to sandbox initialization.
+
 Controlled AALI real-report verification passed for both horizons with the
 existing authenticated volume and its stale `localhost:8003/mcp` configuration:
 

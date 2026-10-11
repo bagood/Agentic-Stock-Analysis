@@ -1,0 +1,7 @@
+# Opt-in workaround for Linux hosts where AppArmor blocks bubblewrap mounts.
+# Use with docker-compose.yml. Only the analysis service loses AppArmor confinement;
+# the custom seccomp profile and Codex read-only sandbox remain enabled.
+services:
+  agentic-stock-analysis:
+    security_opt:
+      - apparmor=unconfined

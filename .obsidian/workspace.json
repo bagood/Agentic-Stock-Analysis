@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "14c26bed3ac6a330",
+        "id": "5a1e8c2dd4235d97",
         "type": "tabs",
         "children": [
           {
-            "id": "10833fd7da25a27b",
+            "id": "dc0c9b01bd0a482b",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "Graph view"
+              "type": "markdown",
+              "state": {
+                "file": "instructions/stock-entry-strategy-10-instructions.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "stock-entry-strategy-10-instructions"
             }
           }
         ]
@@ -181,8 +185,9 @@
       "bases:Create new base": false
     }
   },
-  "active": "10833fd7da25a27b",
+  "active": "dc0c9b01bd0a482b",
   "lastOpenFiles": [
+    "instructions/stock-entry-strategy-10-instructions.md",
     "tests/test_run_hold_strategy.py",
     "tests/test_run_entry_strategy.py",
     "tests/test_organizer_quota_client.py",
@@ -193,7 +198,6 @@
     "tests/test_entry_strategy_api.py",
     "tests/test_codex_runner.py",
     "tests/test_chat_settings.py",
-    "tests/test_chat_service.py",
     "instructions/stock-hold-strategy-5-10-instructions.md",
     "instructions/stock-hold-strategy-10-20-instructions.md",
     "instructions/stock-entry-strategy-5-10-instructions.md",
