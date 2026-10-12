@@ -6,10 +6,9 @@ the generated reports through a small FastAPI service.
 The analysis workflow:
 
 1. Fetches daily ticker recommendations from a configured HTTP endpoint.
-2. Selects recommendations whose score is above `MINIMUM_SCORE`; when fewer
-   than four qualify, selects the four highest-scoring recommendations instead.
-   It then includes tickers returned by the Organizer stocks API and removes
-   duplicates.
+2. Selects exactly the top K unique recommendations for the requested forecast
+   window, then adds portfolio tickers from the Organizer stocks API and removes
+   duplicates. K is set by `TARGET_COUNT = 4` in `run_detailed_analysis.py`.
 3. Fetches technical data for each selected ticker.
 4. Uses the Codex CLI and the instructions in `instructions/` to generate a
    Markdown report.
@@ -51,7 +50,6 @@ ORGANIZER_BASE_URL=http://localhost:8000
 DETAILED_ANALYSIS_RESULT=detailedAnalysisResults
 ENTRY_STRATEGY_RESULT=entryStrategyResults
 HOLD_STRATEGY_RESULT=holdStrategyResults
-MINIMUM_SCORE=0.5
 OPENAI_API_KEY=
 API_PORT=8003
 MCP_PORT=8004
@@ -133,28 +131,35 @@ environment variables, local `.env`, and the Compose analysis service's `env_fil
 Run consumer regression checks with `python -m unittest discover -s tests` in an
 environment installed from `requirements.txt` (Python 3.10+).
 
-This command retrieves the recommendation lists for both rolling windows and
-selects up to four ML recommendations for each. When fewer than four scores are
-above `MINIMUM_SCORE`, lower-scoring recommendations backfill the remaining
-slots. A ticker recommended in both windows is assigned only to the window with
-the higher score; equal scores are assigned to `10dd`. The other window then
-continues down its ranked list so it can still select four unique tickers when
-enough candidates are available.
+Each run fetches only the requested rolling window's recommendations and selects
+exactly `TARGET_COUNT` unique ML tickers. Change the single `TARGET_COUNT = 4`
+setting in `run_detailed_analysis.py` to adjust that quota; it must be a positive
+integer. Selection normalizes ticker case and whitespace, keeps the highest score
+for duplicates, and orders by descending score then ascending ticker for ties.
+Zero and negative scores are eligible.
 
-Only the requested window is analyzed. Results are written to either the local
-`detailedAnalysisResults/5dd/` or `detailedAnalysisResults/10dd/` directory. A
-run clears and replaces reports only inside its selected rolling-window
-directory; reports for the other window are preserved.
+Detailed analysis adds portfolio tickers from
+`GET /stocks?trading_window=5dd|10dd` on `ORGANIZER_BASE_URL`. The endpoint
+accepts a ticker-string array, an array of ticker objects, or an object containing
+a `stocks` list of either shape. The window identifier (`trading_window`, with `rolling_window` as a fallback)
+must match the requested window when supplied. ML tickers are processed first in score order;
+new portfolio tickers follow in service order. Duplicate tickers are processed
+once within a batch. With K=4 and two new portfolio tickers, six analyses are
+attempted. Portfolio overlaps do not require replacement ML recommendations.
 
-Existing files with the same ticker name are replaced by newly generated
-reports.
+If the upstream list supplies fewer than K valid unique recommendations, the run
+fails with the requested and available counts. Portfolio holdings cannot fill
+missing ML slots. Configuration, preflight, service, and payload failures preserve
+existing reports; output cleanup starts only after successful selection and
+portfolio validation. Each selected ticker is attempted even if an earlier
+analysis fails, and any failed analysis makes the batch return a nonzero status.
+The quota guarantees attempts, not successful reports.
 
-Detailed analysis merges the selected ML tickers from the recommendation endpoint on
-`ML_BASE_URL` and `GET /stocks?trading_window=5dd|10dd` on
-`ORGANIZER_BASE_URL`.
-Organizer stocks are additional to the four-ML-recommendation quota. Duplicate
-tickers within the requested window are analyzed only once.
-The stocks endpoint may return a ticker-only JSON array such as `["BNBR"]`.
+Results are written to `detailedAnalysisResults/5dd/` or
+`detailedAnalysisResults/10dd/`. Selection is independent for each window, so the
+same ticker may appear in both directories. A successful selection clears and
+replaces reports only in its requested rolling-window directory; reports for the
+other window are preserved.
 
 ## Generate entry strategies with Docker
 

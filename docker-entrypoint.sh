@@ -7,7 +7,6 @@ set -eu
 : "${HOLD_STRATEGY_RESULT:=holdStrategyResults}"
 : "${ML_BASE_URL:=}"
 : "${ORGANIZER_BASE_URL:=http://localhost:8000}"
-: "${MINIMUM_SCORE:=0.5}"
 
 # File-backed credentials are portable; macOS keychain entries are not.
 : "${CODEX_HOME:=/root/.codex}"
@@ -30,7 +29,6 @@ ENTRY_STRATEGY_RESULT=${ENTRY_STRATEGY_RESULT}
 HOLD_STRATEGY_RESULT=${HOLD_STRATEGY_RESULT}
 ML_BASE_URL=${ML_BASE_URL}
 ORGANIZER_BASE_URL=${ORGANIZER_BASE_URL}
-MINIMUM_SCORE=${MINIMUM_SCORE}
 EOF
 
 exec "$@"

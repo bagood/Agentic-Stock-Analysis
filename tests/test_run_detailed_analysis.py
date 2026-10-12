@@ -1,4 +1,6 @@
+import io
 import os
+from contextlib import redirect_stderr, redirect_stdout
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,175 +15,55 @@ from run_detailed_analysis import (
     parse_args,
     parse_scored_recommendations,
     prepare_output_dir,
-    select_positive_tickers,
+    select_top_tickers,
     select_stock_tickers,
-    select_window_recommendations,
 )
 
 
-class SelectPositiveTickersTests(unittest.TestCase):
-    def test_rejects_unicode_before_uppercase_can_expand_it(self) -> None:
-        with self.assertRaises(ValueError):
-            parse_scored_recommendations({"recommendations": [{"ticker": "ßaa", "score": .9}]})
-
-    def test_falls_back_to_top_four_when_only_two_clear_minimum(self) -> None:
-        payload = {
-            "score_date": "2026-08-07",
-            "rolling_window": "10dd",
-            "recommendations": [
-                {
-                    "ticker": "MDIA",
-                    "score": 0.8599585269409312,
-                    "target_buy_price": 212.0,
-                    "target_sell_price": 267.0,
-                },
-                {
-                    "ticker": "OASA",
-                    "score": 0.5736330807047905,
-                    "target_buy_price": 275.0,
-                    "target_sell_price": 362.0,
-                },
-                {
-                    "ticker": "BULL",
-                    "score": 0.2157031614335893,
-                    "target_buy_price": 365.0,
-                    "target_sell_price": 481.0,
-                },
-                {
-                    "ticker": "INDY",
-                    "score": 0.1778875178227112,
-                    "target_buy_price": 2244.0,
-                    "target_sell_price": 2831.0,
-                },
-                {
-                    "ticker": "BNBR",
-                    "score": 0.1558037053441054,
-                    "target_buy_price": 88.0,
-                    "target_sell_price": 112.0,
-                },
-                {
-                    "ticker": "MINA",
-                    "score": 0.1414038307026853,
-                    "target_buy_price": 231.0,
-                    "target_sell_price": 292.0,
-                },
-                {
-                    "ticker": "UNTR",
-                    "score": 0.1292442781296986,
-                    "target_buy_price": 19680.0,
-                    "target_sell_price": 24815.0,
-                },
-                {
-                    "ticker": "PADI",
-                    "score": 0.0633433630397498,
-                    "target_buy_price": 61.0,
-                    "target_sell_price": 78.0,
-                },
-                {
-                    "ticker": "ANTM",
-                    "score": 0.0393221749179978,
-                    "target_buy_price": 2626.0,
-                    "target_sell_price": 3313.0,
-                },
-                {
-                    "ticker": "EMTK",
-                    "score": 0.0382674360882503,
-                    "target_buy_price": 440.0,
-                    "target_sell_price": 556.0,
-                },
-                {
-                    "ticker": "SSMS",
-                    "score": 0.0160040774695938,
-                    "target_buy_price": 764.0,
-                    "target_sell_price": 965.0,
-                },
-            ],
-        }
-
-        selected = select_positive_tickers(payload, minimum_score=0.5)
-
-        self.assertEqual(selected, ["MDIA", "OASA", "BULL", "INDY"])
-
-    def test_caps_qualifying_recommendations_at_four(self) -> None:
-        payload = {
-            "recommendations": [
-                {"ticker": ticker, "score": score}
-                for ticker, score in (
-                    ("FIVE", 0.5),
-                    ("ONE", 0.9),
-                    ("THREE", 0.7),
-                    ("TWO", 0.8),
-                    ("FOUR", 0.6),
-                )
-            ]
-        }
-
-        self.assertEqual(
-            select_positive_tickers(payload, minimum_score=0.1),
-            ["ONE", "TWO", "THREE", "FOUR"],
-        )
-
-    def test_normalizes_duplicates_and_keeps_the_highest_score(self) -> None:
-        payload = {
-            "recommendations": [
-                {"ticker": " kota ", "score": 0.47},
-                {"ticker": "KOTA", "score": 0.52},
-            ]
-        }
-
-        self.assertEqual(parse_scored_recommendations(payload), [("KOTA", 0.52)])
+def recommendations(*entries):
+    return {"recommendations": [
+        {"ticker": ticker, "score": score} for ticker, score in entries
+    ]}
 
 
-class SelectWindowRecommendationsTests(unittest.TestCase):
-    def test_assigns_duplicate_to_higher_score_and_replenishes_loser(self) -> None:
-        selected = select_window_recommendations(
-            {
-                "5dd": {
-                    "recommendations": [
-                        {"ticker": "KOTA", "score": 0.47},
-                        {"ticker": "AAAA", "score": 0.45},
-                        {"ticker": "BBBB", "score": 0.42},
-                        {"ticker": "CCCC", "score": 0.40},
-                        {"ticker": "DDDD", "score": 0.38},
-                    ]
-                },
-                "10dd": {
-                    "recommendations": [
-                        {"ticker": " kota ", "score": 0.60},
-                        {"ticker": "EEEE", "score": 0.55},
-                        {"ticker": "FFFF", "score": 0.50},
-                        {"ticker": "GGGG", "score": 0.48},
-                        {"ticker": "HHHH", "score": 0.44},
-                    ]
-                },
-            },
-            minimum_score=0.5,
-        )
+class SelectTopTickersTests(unittest.TestCase):
+    def test_sorts_unsorted_candidates_and_caps_at_k(self):
+        payload = recommendations(("FIVE", .5), ("ONE", .9), ("THREE", .7),
+                                  ("TWO", .8), ("FOUR", .6))
+        self.assertEqual(select_top_tickers(payload, 4), ["ONE", "TWO", "THREE", "FOUR"])
+        self.assertEqual(select_top_tickers(payload, 2), ["ONE", "TWO"])
 
-        self.assertEqual(selected["5dd"], ["AAAA", "BBBB", "CCCC", "DDDD"])
-        self.assertEqual(selected["10dd"], ["KOTA", "EEEE", "FFFF", "GGGG"])
-        self.assertTrue(set(selected["5dd"]).isdisjoint(selected["10dd"]))
+    def test_ties_zero_negative_scores_and_normalized_duplicates(self):
+        payload = recommendations((" zzzz ", -1), ("BBBB", 0), ("aaaa", 0),
+                                  ("ZZZZ", -2), ("bbbb", -3), ("CCCC", -4))
+        self.assertEqual(select_top_tickers(payload, 4), ["AAAA", "BBBB", "ZZZZ", "CCCC"])
+        self.assertEqual(parse_scored_recommendations(payload),
+                         [("AAAA", 0.), ("BBBB", 0.), ("ZZZZ", -1.), ("CCCC", -4.)])
 
-    def test_higher_five_day_score_wins_and_equal_scores_go_to_ten_day(self) -> None:
-        selected = select_window_recommendations(
-            {
-                "5dd": {
-                    "recommendations": [
-                        {"ticker": "FIVE", "score": 0.8},
-                        {"ticker": "TIE", "score": 0.7},
-                    ]
-                },
-                "10dd": {
-                    "recommendations": [
-                        {"ticker": "FIVE", "score": 0.6},
-                        {"ticker": "TIE", "score": 0.7},
-                    ]
-                },
-            },
-            minimum_score=0.5,
-        )
+    def test_rejects_invalid_counts(self):
+        for count in (True, False, 0, -1, 1.5, "4", None):
+            with self.subTest(count=count), self.assertRaisesRegex(ValueError, "positive integer"):
+                select_top_tickers(recommendations(("AAAA", 1)), count)
 
-        self.assertEqual(selected, {"5dd": ["FIVE"], "10dd": ["TIE"]})
+    def test_rejects_invalid_and_nonfinite_scores(self):
+        for score in (float("nan"), float("inf"), float("-inf"), 10 ** 400, True, "1", None):
+            with self.subTest(score=score), self.assertRaisesRegex(ValueError, "invalid score"):
+                select_top_tickers(recommendations(("AAAA", score)), 1)
+
+    def test_rejects_invalid_payloads_and_tickers(self):
+        for payload in ([], {}, {"recommendations": {}}, {"recommendations": [None]},
+                        recommendations(("ßaa", .9)), recommendations((" ", .9)),
+                        recommendations((None, .9))):
+            with self.subTest(payload=payload), self.assertRaises(ValueError):
+                select_top_tickers(payload, 1)
+
+    def test_reports_quota_shortage_after_normalization(self):
+        for payload, available in ((recommendations(), 0),
+                                   (recommendations(("aaaa", 1), (" AAAA ", 2)), 1)):
+            with self.subTest(available=available), self.assertRaisesRegex(
+                ValueError, f"requested 4.*available {available}"
+            ):
+                select_top_tickers(payload, 4)
 
 
 class SelectStockTickersTests(unittest.TestCase):
@@ -322,7 +204,6 @@ class ForecastArgumentTests(unittest.TestCase):
                     "ML_BASE_URL": "https://data.example.test/",
                     "ORGANIZER_BASE_URL": "http://localhost:8000",
                     "DETAILED_ANALYSIS_RESULT": "unused-in-test",
-                    "MINIMUM_SCORE": "0.5",
                 },
                 clear=False,
             ), patch.object(runner, "load_env"), patch.object(
@@ -333,8 +214,7 @@ class ForecastArgumentTests(unittest.TestCase):
                 runner,
                 "fetch_json",
                 side_effect=[
-                    {"recommendations": [{"ticker": "BBCA", "score": 0.9}]},
-                    {"recommendations": [{"ticker": "BMRI", "score": 0.8}]},
+                    recommendations(("BBCA", .9), ("BMRI", .8), ("ASII", 0), ("INDY", -1)),
                     {"stocks": [{"ticker": "TLKM"}]},
                 ],
             ) as fetch_json, patch.object(
@@ -351,14 +231,7 @@ class ForecastArgumentTests(unittest.TestCase):
                     [
                         call(
                             "https://data.example.test/analytics/"
-                            "daily_recommendations?rolling_window="
-                            "5dd",
-                            12.0,
-                        ),
-                        call(
-                            "https://data.example.test/analytics/"
-                            "daily_recommendations?rolling_window="
-                            "10dd",
+                            f"daily_recommendations?rolling_window={rolling_window}",
                             12.0,
                         ),
                         call(
@@ -383,44 +256,120 @@ class ForecastArgumentTests(unittest.TestCase):
                             _preflight=ANY,
                         )
                         for ticker in (
-                            "BBCA" if rolling_window == "5dd" else "BMRI",
-                            "TLKM",
+                            "BBCA", "BMRI", "ASII", "INDY", "TLKM",
                         )
                     ],
                 )
 
 
-class BatchFailureTests(unittest.TestCase):
-    def setUp(self):
-        self.preflight = patch.object(runner, "preflight").start()
-        self.addCleanup(patch.stopall)
+class BatchTests(unittest.TestCase):
+    candidates = recommendations(("DDDD", -1), ("BBBB", .8), ("AAAA", .9),
+                                ("EEEE", -2), ("CCCC", 0))
 
-    def run_batch(self, recommendations, stocks, outcomes):
+    def run_batch(self, payload=None, stocks=None, outcomes=None, target_count=4,
+                  forecast_window="5", fetch_error=None, preflight_error=None):
         with patch.dict(os.environ, {
-            "ML_BASE_URL": "https://data.example.test", "DETAILED_ANALYSIS_RESULT": "unused",
-            "MINIMUM_SCORE": "0.5", "ORGANIZER_BASE_URL": "https://organizer.example.test",
+            "ML_BASE_URL": "https://data.example.test",
+            "DETAILED_ANALYSIS_RESULT": "unused",
+            "ORGANIZER_BASE_URL": "https://organizer.example.test",
         }, clear=True), patch.object(runner, "load_env"), patch.object(
-            runner, "prepare_output_dir", return_value=Path("/tmp/unused/5dd")
-        ), patch.object(runner, "fetch_json", side_effect=[recommendations, {"recommendations": []}, stocks]), patch.object(
-            runner, "run_detailed_analysis", side_effect=outcomes
-        ) as analyze:
-            result = runner.main("5")
-        return result, analyze
+            runner, "TARGET_COUNT", target_count
+        ), patch.object(runner, "preflight", side_effect=preflight_error) as checked, patch.object(
+            runner, "prepare_output_dir", return_value=Path("/tmp/unused")
+        ) as prepare, patch.object(
+            runner, "fetch_json", side_effect=fetch_error or [
+                self.candidates if payload is None else payload,
+                [] if stocks is None else stocks,
+            ]
+        ) as fetch, patch.object(
+            runner, "run_detailed_analysis", side_effect=outcomes, return_value=0
+        ) as analyze, redirect_stdout(io.StringIO()) as stdout, redirect_stderr(io.StringIO()) as stderr:
+            result = runner.main(forecast_window)
+        return result, analyze, prepare, fetch, checked, stdout.getvalue(), stderr.getvalue()
+
+    def test_portfolio_shapes_holdings_and_service_order(self):
+        cases = [
+            ([], ["AAAA", "BBBB", "CCCC", "DDDD"]),
+            (["BBBB"], ["AAAA", "BBBB", "CCCC", "DDDD"]),
+            (["bbbb", " EEEE ", "FFFF", "eeee"],
+             ["AAAA", "BBBB", "CCCC", "DDDD", "EEEE", "FFFF"]),
+            ([{"ticker": "EEEE", "rolling_window": "5dd"}, {"ticker": "BBBB"}],
+             ["AAAA", "BBBB", "CCCC", "DDDD", "EEEE"]),
+        ]
+        for stocks, expected in cases:
+            for payload in (stocks, {"stocks": stocks}):
+                with self.subTest(payload=payload):
+                    result, analyze, prepare, _, checked, output, _ = self.run_batch(stocks=payload)
+                    self.assertEqual(result, 0)
+                    self.assertEqual([c.args[0] for c in analyze.call_args_list], expected)
+                    prepare.assert_called_once_with("unused/5dd")
+                    self.assertIn(f"total selected tickers: {len(expected)}", output)
+                    self.assertIn(f"additional portfolio tickers: {len(expected) - 4}", output)
+                    self.assertTrue(all(c.kwargs["_preflight"] is checked.return_value
+                                        for c in analyze.call_args_list))
+
+    def test_changed_target_count_controls_quota_and_diagnostics(self):
+        for count in (1, 2, 5):
+            with self.subTest(count=count):
+                result, analyze, _, _, _, output, _ = self.run_batch(target_count=count)
+                self.assertEqual(result, 0)
+                self.assertEqual(analyze.call_count, count)
+                self.assertIn(f"requested {count}, selected {count}", output)
+
+    def test_shared_tickers_remain_selected_for_both_windows(self):
+        for window in ("5", "10"):
+            with self.subTest(window=window):
+                result, analyze, _, fetch, _, _, _ = self.run_batch(forecast_window=window)
+                self.assertEqual(result, 0)
+                self.assertEqual([c.args[0] for c in analyze.call_args_list],
+                                 ["AAAA", "BBBB", "CCCC", "DDDD"])
+                self.assertEqual(fetch.call_args_list, [
+                    call(f"https://data.example.test/analytics/daily_recommendations?rolling_window={window}dd", 30.),
+                    call(f"https://organizer.example.test/stocks?trading_window={window}dd", 30.),
+                ])
+
+    def test_shortages_never_cleanup_or_analyze_even_with_holdings(self):
+        for payload, available in ((recommendations(), 0),
+                                   (recommendations(("aaaa", 1), (" AAAA ", 2)), 1)):
+            with self.subTest(available=available):
+                result, analyze, prepare, _, _, _, error = self.run_batch(
+                    payload=payload, stocks=["BBBB", "CCCC", "DDDD", "EEEE"])
+                self.assertEqual(result, 1)
+                self.assertIn(f"requested 4 unique ML tickers, available {available}", error)
+                analyze.assert_not_called()
+                prepare.assert_not_called()
+
+    def test_bad_portfolio_and_retrieval_failures_preserve_reports(self):
+        for stocks in ({}, {"stocks": None}, [None], [""],
+                       [{"ticker": "AAAA", "trading_window": "10dd"}]):
+            with self.subTest(stocks=stocks):
+                result, analyze, prepare, *_ = self.run_batch(stocks=stocks)
+                self.assertEqual(result, 1)
+                analyze.assert_not_called()
+                prepare.assert_not_called()
+        for failure in ([RuntimeError("recommendations unavailable")],
+                        [self.candidates, RuntimeError("portfolio unavailable")]):
+            with self.subTest(failure=failure):
+                result, analyze, prepare, *_ = self.run_batch(fetch_error=failure)
+                self.assertEqual(result, 1)
+                analyze.assert_not_called()
+                prepare.assert_not_called()
+
+    def test_preflight_failure_prevents_fetch_cleanup_and_analysis(self):
+        result, analyze, prepare, fetch, *_ = self.run_batch(preflight_error=RuntimeError("preflight failed"))
+        self.assertEqual(result, 1)
+        analyze.assert_not_called()
+        prepare.assert_not_called()
+        fetch.assert_not_called()
 
     def test_failed_ticker_does_not_stop_batch_or_return_success(self):
-        result, analyze = self.run_batch(
-            {"recommendations": [{"ticker": "AALI", "score": .9}, {"ticker": "BBCA", "score": .8}]},
-            {"stocks": ["TLKM"]}, [1, 0, 0],
-        )
+        result, analyze, _, _, _, _, error = self.run_batch(stocks=["FFFF"], outcomes=[1, 0, 0, 0, 0])
         self.assertEqual(result, 1)
-        self.assertEqual([call.args[0] for call in analyze.call_args_list], ["AALI", "BBCA", "TLKM"])
-        self.assertTrue(all(call.kwargs["forecast_type"] == "5dd" for call in analyze.call_args_list))
-        self.assertIs(analyze.call_args_list[0].kwargs["technical_config"], analyze.call_args_list[-1].kwargs["technical_config"])
-
-    def test_empty_ticker_list_succeeds_without_running_analysis(self):
-        result, analyze = self.run_batch({"recommendations": []}, {"stocks": []}, [])
-        self.assertEqual(result, 0)
-        analyze.assert_not_called()
+        self.assertEqual([c.args[0] for c in analyze.call_args_list], ["AAAA", "BBBB", "CCCC", "DDDD", "FFFF"])
+        self.assertIn("Analysis failed for: AAAA", error)
+        self.assertTrue(all(c.kwargs["forecast_type"] == "5dd" for c in analyze.call_args_list))
+        self.assertIs(analyze.call_args_list[0].kwargs["technical_config"],
+                      analyze.call_args_list[-1].kwargs["technical_config"])
 
     def test_bad_client_configuration_fails_before_network_or_directory_cleanup(self):
         with patch.dict(os.environ, {"TECHNICAL_API_TIMEOUT_SECONDS": "nan"}, clear=True), patch.object(

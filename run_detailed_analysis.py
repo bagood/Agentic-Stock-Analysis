@@ -5,6 +5,7 @@ The shared dates align OHLCV and indicators for three historical sessions;
 """
 
 import argparse
+import math
 import os
 import shutil
 import sys
@@ -18,6 +19,7 @@ from detailedAnalysis.preflight import preflight
 
 PROJECT_DIR = Path(__file__).resolve().parent
 ENV_PATH = PROJECT_DIR / ".env"
+TARGET_COUNT = 4
 
 FORECAST_CONFIGS = {
     "5": {
@@ -83,11 +85,19 @@ def parse_scored_recommendations(payload: Any) -> list[tuple[str, float]]:
             raise ValueError(f"Recommendation at index {index} has an invalid ticker")
         if isinstance(score, bool) or not isinstance(score, (int, float)):
             raise ValueError(f"Recommendation at index {index} has an invalid score")
+        try:
+            score = float(score)
+        except OverflowError as exc:
+            raise ValueError(
+                f"Recommendation at index {index} has an invalid score"
+            ) from exc
+        if not math.isfinite(score):
+            raise ValueError(f"Recommendation at index {index} has an invalid score")
 
         normalized_ticker = ticker.strip().upper()
         existing_score = ticker_scores.get(normalized_ticker)
         if existing_score is None or score > existing_score:
-            ticker_scores[normalized_ticker] = float(score)
+            ticker_scores[normalized_ticker] = score
 
     return sorted(
         ticker_scores.items(),
@@ -95,98 +105,21 @@ def parse_scored_recommendations(payload: Any) -> list[tuple[str, float]]:
     )
 
 
-def select_positive_tickers(
-    payload: Any,
-    minimum_score: float,
-    target_count: int = 4,
-) -> list[str]:
-    """Return up to ``target_count`` highest-scoring unique tickers."""
+def select_top_tickers(payload: Any, target_count: int) -> list[str]:
+    """Return exactly the highest-scoring K unique tickers or fail explicitly."""
+    if (
+        isinstance(target_count, bool)
+        or not isinstance(target_count, int)
+        or target_count < 1
+    ):
+        raise ValueError("Target count must be a positive integer")
     scored_tickers = parse_scored_recommendations(payload)
-
-    tickers = [
-        ticker for ticker, score in scored_tickers if score > minimum_score
-    ][:target_count]
-    if len(tickers) < target_count:
-        selected = set(tickers)
-        tickers.extend(
-            ticker
-            for ticker, _ in scored_tickers
-            if ticker not in selected
+    if len(scored_tickers) < target_count:
+        raise ValueError(
+            f"Recommendation quota shortage: requested {target_count} unique ML "
+            f"tickers, available {len(scored_tickers)}"
         )
-
-    return tickers[:target_count]
-
-
-def select_window_recommendations(
-    payloads: dict[str, Any],
-    minimum_score: float,
-    target_count: int = 4,
-) -> dict[str, list[str]]:
-    """Allocate each recommendation to at most one rolling window.
-
-    A ticker offered by both windows belongs to the window with the higher
-    score. Equal scores belong to 10dd. Each window then receives its highest
-    ranked owned tickers, backfilled below ``minimum_score`` when necessary.
-    """
-    if set(payloads) != {"5dd", "10dd"}:
-        raise ValueError("Recommendation payloads must contain 5dd and 10dd")
-    if target_count < 1:
-        raise ValueError("Target count must be at least one")
-
-    candidates = {
-        window: parse_scored_recommendations(payloads[window])
-        for window in ("5dd", "10dd")
-    }
-    scores = {
-        window: dict(window_candidates)
-        for window, window_candidates in candidates.items()
-    }
-    owners: dict[str, str] = {}
-    for ticker in scores["5dd"].keys() | scores["10dd"].keys():
-        five_score = scores["5dd"].get(ticker)
-        ten_score = scores["10dd"].get(ticker)
-        if five_score is None:
-            owners[ticker] = "10dd"
-        elif ten_score is None or five_score > ten_score:
-            owners[ticker] = "5dd"
-        else:
-            owners[ticker] = "10dd"
-
-    selected: dict[str, list[str]] = {}
-    for window in ("5dd", "10dd"):
-        owned_payload = {
-            "recommendations": [
-                {"ticker": ticker, "score": score}
-                for ticker, score in candidates[window]
-                if owners[ticker] == window
-            ]
-        }
-        selected[window] = select_positive_tickers(
-            owned_payload,
-            minimum_score,
-            target_count,
-        )
-
-    return selected
-
-
-def describe_duplicate_assignments(payloads: dict[str, Any]) -> list[str]:
-    """Describe how recommendations shared by both windows were assigned."""
-    scores = {
-        window: dict(parse_scored_recommendations(payloads[window]))
-        for window in ("5dd", "10dd")
-    }
-    messages: list[str] = []
-    for ticker in sorted(scores["5dd"].keys() & scores["10dd"].keys()):
-        five_score = scores["5dd"][ticker]
-        ten_score = scores["10dd"][ticker]
-        owner = "5dd" if five_score > ten_score else "10dd"
-        reason = "higher score" if five_score != ten_score else "equal-score tie-break"
-        messages.append(
-            f"{ticker} assigned to {owner} ({reason}: "
-            f"5dd={five_score:g}, 10dd={ten_score:g})"
-        )
-    return messages
+    return [ticker for ticker, _ in scored_tickers[:target_count]]
 
 
 def select_stock_tickers(payload: Any, trading_window: str) -> list[str]:
@@ -241,40 +174,26 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
         forecast_config = FORECAST_CONFIGS[forecast_window]
         technical_config = TechnicalConfig.from_environment(timeout)
         checked = preflight(PROJECT_DIR, PROJECT_DIR / forecast_config["instructions_path"])
-        output_dir = prepare_output_dir(
-            str(
-                Path(os.environ["DETAILED_ANALYSIS_RESULT"])
-                / forecast_config["rolling_window"]
-            )
+        output_dir_value = str(
+            Path(os.environ["DETAILED_ANALYSIS_RESULT"])
+            / forecast_config["rolling_window"]
         )
         base_url = os.environ["ML_BASE_URL"]
-        recommendation_urls = {
-            rolling_window: build_api_url(
-                base_url,
-                "analytics/daily_recommendations",
-                [("rolling_window", rolling_window)],
-            )
-            for rolling_window in ("5dd", "10dd")
-        }
+        recommendation_url = build_api_url(
+            base_url,
+            "analytics/daily_recommendations",
+            [("rolling_window", forecast_config["rolling_window"])],
+        )
         stocks_url = build_api_url(
             os.environ.get("ORGANIZER_BASE_URL", "http://localhost:8000"),
             "stocks",
             [("trading_window", forecast_config["rolling_window"])],
         )
-        minimum_score = float(os.environ["MINIMUM_SCORE"])
-        recommendations = {
-            rolling_window: fetch_json(url, timeout)
-            for rolling_window, url in recommendation_urls.items()
-        }
+        recommendations = fetch_json(recommendation_url, timeout)
         stocks = fetch_json(stocks_url, timeout)
-        recommendations_by_window = select_window_recommendations(
-            recommendations, minimum_score
+        recommendation_tickers = select_top_tickers(
+            recommendations, target_count=TARGET_COUNT
         )
-        for assignment in describe_duplicate_assignments(recommendations):
-            print(assignment)
-        recommendation_tickers = recommendations_by_window[
-            forecast_config["rolling_window"]
-        ]
         stock_tickers = select_stock_tickers(
             stocks,
             forecast_config["rolling_window"],
@@ -284,16 +203,19 @@ def main(forecast_window: str = "10", timeout: float = 30.0) -> int:
             stock_tickers,
         )
 
+        output_dir = prepare_output_dir(output_dir_value)
+        print(
+            f"ML recommendations: requested {TARGET_COUNT}, "
+            f"selected {len(recommendation_tickers)}; "
+            f"additional portfolio tickers: {len(ticker_list) - len(recommendation_tickers)}; "
+            f"total selected tickers: {len(ticker_list)}"
+        )
         print("Selected Tickers")
         print(ticker_list)
 
     except (KeyError, OSError, RuntimeError, ValueError) as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 1
-
-    if not ticker_list:
-        print("No tickers selected from recommendations or stocks API.")
-        return 0
 
     failed_tickers: list[str] = []
     for ticker in ticker_list:
